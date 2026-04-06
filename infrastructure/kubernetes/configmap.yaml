@@ -1,0 +1,79 @@
+---
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aletheia-config
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/component: config
+data:
+  ALETHEIA_ENVIRONMENT: "production"
+  DJANGO_DEBUG: "false"
+  
+  # API Settings
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_WORKERS: "4"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # ML Settings
+  ML_DEVICE: "cuda"
+  ML_PRECISION: "fp16"
+  ML_BATCH_SIZE: "8"
+  DEFAULT_SEQUENCE_LENGTH: "60"
+  
+  # Celery Settings
+  CELERY_BROKER_URL: "redis://redis:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis:6379/1"
+  CELERY_TASK_ALWAYS_EAGER: "false"
+  CELERY_TASK_TIME_LIMIT: "1800"
+  CELERY_TASK_SOFT_TIME_LIMIT: "1500"
+  
+  # File Upload Settings
+  MAX_UPLOAD_SIZE_MB: "500"
+  ALLOWED_VIDEO_EXTENSIONS: "mp4,avi,mov,mkv,webm"
+  ALLOWED_IMAGE_EXTENSIONS: "jpg,jpeg,png,webp"
+  
+  # Cache Settings
+  CACHE_TTL: "3600"
+  
+  # CORS Settings
+  CORS_ALLOWED_ORIGINS: "https://aletheia.io,https://www.aletheia.io"
+  CORS_ALLOW_CREDENTIALS: "true"
+---
+# Secrets template (values should be base64 encoded in actual deployment)
+# In production, use sealed-secrets, external-secrets, or Vault
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aletheia-secrets
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/component: secrets
+type: Opaque
+stringData:
+  # Django
+  SECRET_KEY: "REPLACE_WITH_ACTUAL_SECRET_KEY"
+  
+  # Database
+  DATABASE_URL: "postgres://aletheia:REPLACE_PASSWORD@postgres:5432/aletheia"
+  
+  # Redis
+  REDIS_URL: "redis://redis:6379/0"
+  
+  # S3 Storage (MinIO or AWS)
+  AWS_ACCESS_KEY_ID: "REPLACE_WITH_ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "REPLACE_WITH_SECRET_KEY"
+  AWS_STORAGE_BUCKET_NAME: "aletheia-media"
+  
+  # Sentry (error tracking)
+  SENTRY_DSN: ""
+  
+  # JWT
+  JWT_SIGNING_KEY: "REPLACE_WITH_JWT_KEY"

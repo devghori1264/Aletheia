@@ -1,0 +1,202 @@
+# =============================================================================
+# Aletheia - Docker Compose Configuration
+# =============================================================================
+# Development environment with all services
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ===========================================================================
+  # API Service (Django)
+  # ===========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: aletheia-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ALETHEIA_ENVIRONMENT=development
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-me}
+      - DEBUG=true
+      - DATABASE_URL=postgres://aletheia:aletheia@postgres:5432/aletheia
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    volumes:
+      - ./src:/app/src
+      - media_data:/app/media
+      - static_data:/app/static
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aletheia-network
+
+  # ===========================================================================
+  # Celery Worker
+  # ===========================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    container_name: aletheia-celery-worker
+    restart: unless-stopped
+    command: celery -A aletheia worker -l INFO -Q analysis,reports,webhooks,maintenance
+    environment:
+      - ALETHEIA_ENVIRONMENT=development
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-me}
+      - DATABASE_URL=postgres://aletheia:aletheia@postgres:5432/aletheia
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    volumes:
+      - ./src:/app/src
+      - media_data:/app/media
+      - model_data:/app/models
+    depends_on:
+      - api
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - aletheia-network
+
+  # ===========================================================================
+  # Celery Beat (Scheduler)
+  # ===========================================================================
+  celery-beat:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    container_name: aletheia-celery-beat
+    restart: unless-stopped
+    command: celery -A aletheia beat -l INFO
+    environment:
+      - ALETHEIA_ENVIRONMENT=development
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-secret-key-change-me}
+      - DATABASE_URL=postgres://aletheia:aletheia@postgres:5432/aletheia
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - api
+      - redis
+    networks:
+      - aletheia-network
+
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: aletheia-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=aletheia
+      - POSTGRES_PASSWORD=aletheia
+      - POSTGRES_DB=aletheia
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aletheia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aletheia-network
+    ports:
+      - "5432:5432"
+
+  # ===========================================================================
+  # Redis (Cache & Message Broker)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aletheia-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aletheia-network
+    ports:
+      - "6379:6379"
+
+  # ===========================================================================
+  # Flower (Celery Monitoring)
+  # ===========================================================================
+  flower:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    container_name: aletheia-flower
+    restart: unless-stopped
+    command: celery -A aletheia flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - aletheia-network
+
+  # ===========================================================================
+  # Frontend (Optional - React)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aletheia-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - api
+    networks:
+      - aletheia-network
+    profiles:
+      - frontend
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  aletheia-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
+  static_data:
+  model_data:

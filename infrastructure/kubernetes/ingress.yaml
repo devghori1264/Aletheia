@@ -1,0 +1,68 @@
+---
+# Aletheia Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aletheia-ingress
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/component: ingress
+  annotations:
+    # TLS
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    
+    # NGINX configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;" always;
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: "aletheia-api"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.aletheia.io
+      secretName: aletheia-tls
+  rules:
+    - host: api.aletheia.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aletheia-api
+                port:
+                  number: 80
+---
+# Certificate (cert-manager)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: aletheia-tls
+  namespace: aletheia
+spec:
+  secretName: aletheia-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: api.aletheia.io
+  dnsNames:
+    - api.aletheia.io
+    - www.aletheia.io

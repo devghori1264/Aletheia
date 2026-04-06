@@ -1,0 +1,89 @@
+# =============================================================================
+# Aletheia API Dockerfile
+# =============================================================================
+# Multi-stage build for optimized production image
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY pyproject.toml .
+RUN pip install --upgrade pip && \
+    pip wheel --no-cache-dir --wheel-dir /app/wheels -e ".[production]"
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim as runtime
+
+# Labels
+LABEL maintainer="Aletheia Team <team@aletheia.ai>"
+LABEL version="1.0.0"
+LABEL description="Aletheia API Server"
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system --gid 1001 aletheia \
+    && adduser --system --uid 1001 --gid 1001 aletheia
+
+# Copy wheels and install
+COPY --from=builder /app/wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# Copy application code
+COPY --chown=aletheia:aletheia src/ /app/src/
+COPY --chown=aletheia:aletheia pyproject.toml /app/
+
+# Create necessary directories
+RUN mkdir -p /app/media /app/static /app/logs && \
+    chown -R aletheia:aletheia /app
+
+# Switch to non-root user
+USER aletheia
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health/ || exit 1
+
+# Default command
+CMD ["gunicorn", "aletheia.wsgi:application", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "gthread", \
+     "--threads", "2", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--capture-output"]

@@ -1,0 +1,58 @@
+# =============================================================================
+# Aletheia Worker Dockerfile
+# =============================================================================
+# GPU-enabled worker for ML inference
+# =============================================================================
+
+# Base image with CUDA support
+FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
+
+# Labels
+LABEL maintainer="Aletheia Team <team@aletheia.ai>"
+LABEL version="1.0.0"
+LABEL description="Aletheia Celery Worker with GPU Support"
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd --system --gid 1001 aletheia && \
+    useradd --system --uid 1001 --gid 1001 aletheia
+
+# Install Python dependencies
+COPY pyproject.toml .
+RUN pip install --upgrade pip && \
+    pip install -e ".[production,ml]"
+
+# Copy application code
+COPY --chown=aletheia:aletheia src/ /app/src/
+
+# Create necessary directories
+RUN mkdir -p /app/media /app/models /app/logs && \
+    chown -R aletheia:aletheia /app
+
+# Switch to non-root user
+USER aletheia
+
+# Default command (Celery worker)
+CMD ["celery", "-A", "aletheia", "worker", "-l", "INFO"]

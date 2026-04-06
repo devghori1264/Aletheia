@@ -1,0 +1,42 @@
+---
+# Aletheia Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/managed-by: kubectl
+---
+# Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: aletheia-quota
+  namespace: aletheia
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: 100Gi
+    limits.cpu: "100"
+    limits.memory: 200Gi
+    persistentvolumeclaims: "20"
+    services: "20"
+    secrets: "50"
+    configmaps: "50"
+---
+# Limit Range
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: aletheia-limits
+  namespace: aletheia
+spec:
+  limits:
+    - default:
+        cpu: "2"
+        memory: 4Gi
+      defaultRequest:
+        cpu: "500m"
+        memory: 1Gi
+      type: Container

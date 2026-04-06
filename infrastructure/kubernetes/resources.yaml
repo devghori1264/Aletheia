@@ -1,0 +1,158 @@
+---
+# Persistent Volume Claims for Aletheia
+---
+# Media storage for uploaded files
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aletheia-media
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 100Gi
+---
+# Model storage for ML model weights
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aletheia-models
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aletheia
+  namespace: aletheia
+  labels:
+    app.kubernetes.io/name: aletheia
+automountServiceAccountToken: true
+---
+# Role for pod access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aletheia-role
+  namespace: aletheia
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+# Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aletheia-role-binding
+  namespace: aletheia
+subjects:
+  - kind: ServiceAccount
+    name: aletheia
+    namespace: aletheia
+roleRef:
+  kind: Role
+  name: aletheia-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Network Policy - API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aletheia-api-network-policy
+  namespace: aletheia
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aletheia
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# Network Policy - Worker
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aletheia-worker-network-policy
+  namespace: aletheia
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aletheia
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
