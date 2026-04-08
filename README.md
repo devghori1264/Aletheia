@@ -101,12 +101,16 @@ The following videos demonstrate the detection pipeline processing both authenti
 
 **Detecting Fake Media**
 
+https://github.com/user-attachments/assets/d369d6da-ec1c-4b99-b281-720ddd60a5db
+
 *Analysis of a deepfake video: The system identifies temporal inconsistencies in facial micro-expressions and flags synthesized regions with 97.2% confidence.*
 
 </td>
 <td width="50%" align="center">
 
 **Verifying Authentic Media**
+
+https://github.com/user-attachments/assets/d5684765-942a-422a-8dca-60931362cfc5
 
 *Analysis of authentic footage: The system validates temporal coherence and physiological consistency, confirming authenticity with 99.1% confidence.*
 
