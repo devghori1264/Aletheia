@@ -59,6 +59,28 @@ export function useAnalysisList(params?: PaginationParams) {
 }
 
 /**
+ * Hook for fetching analysis stats.
+ */
+export function useAnalysisStats() {
+  return useQuery({
+    queryKey: analysisKeys.stats(),
+    queryFn: async () => {
+      try {
+        return await analysisService.getStats();
+      } catch (error) {
+        return {
+          totalAnalyses: 0,
+          fakeDetected: 0,
+          realDetected: 0,
+          averageConfidence: 0,
+          averageProcessingTime: 0,
+        };
+      }
+    },
+  });
+}
+
+/**
  * Hook for creating new analysis.
  */
 export function useCreateAnalysis() {

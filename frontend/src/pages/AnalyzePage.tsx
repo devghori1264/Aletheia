@@ -1,7 +1,9 @@
 /**
  * Analyze Page - Video Upload and Analysis
  * 
- * Clean, professional interface for media upload
+ * Clean, professional interface for media upload.
+ * Supports dark/light theme modes with responsive design.
+ * Prominently displays privacy assurance to build user trust.
  */
 
 import { useState, useCallback } from 'react';
@@ -17,8 +19,10 @@ import {
 import { UploadZone } from '@/components/analysis/UploadZone';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { PrivacyBanner, PrivacyBadge } from '@/components/ui/PrivacyBanner';
 import { useCreateAnalysis } from '@/hooks';
-import { useAnalysisStore } from '@/store';
+import { useAnalysisStore, useTheme } from '@/store';
+import { cn } from '@/utils';
 
 interface AnalysisOptions {
   useEnsemble: boolean;
@@ -28,6 +32,7 @@ interface AnalysisOptions {
 
 export default function AnalyzePage() {
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [options, setOptions] = useState<AnalysisOptions>({
     useEnsemble: true,
     generateHeatmaps: true,
@@ -69,6 +74,8 @@ export default function AnalyzePage() {
   );
 
   // Detect when upload is done but server is still processing
+  const isActuallyUploading = analysisPhase === 'uploading' && 
+    currentProgress && currentProgress.percentage < 100;
   const isServerProcessing = analysisPhase === 'uploading' && 
     currentProgress && currentProgress.percentage >= 100;
 
@@ -76,21 +83,36 @@ export default function AnalyzePage() {
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const isDark = resolvedTheme === 'dark';
+
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl px-4 sm:px-0">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white">
+      <div className="mb-6 sm:mb-8">
+        <h1 className={cn(
+          'text-2xl font-bold tracking-tight sm:text-3xl',
+          isDark ? 'text-white' : 'text-neutral-900'
+        )}>
           Analyze Video
         </h1>
-        <p className="mt-2 text-neutral-400">
+        <p className={cn(
+          'mt-2 text-sm sm:text-base',
+          isDark ? 'text-neutral-400' : 'text-neutral-600'
+        )}>
           Upload a video file to check for signs of manipulation
         </p>
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRIVACY ASSURANCE BANNER
+          Placed prominently before the upload zone to establish trust
+          before users consider uploading sensitive content.
+          ═══════════════════════════════════════════════════════════════════ */}
+      <PrivacyBanner variant="inline" animate className="mb-6" />
+
       {/* Main Upload Area */}
       <Card variant="default" className="mb-6">
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           <UploadZone
             onFilesSelected={handleFilesSelected}
             accept={{ 'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.webm'] }}
@@ -98,45 +120,85 @@ export default function AnalyzePage() {
             maxSize={500 * 1024 * 1024} // 500MB
             disabled={isUploading}
           />
+          
+          {/* Privacy badge below upload zone for reinforcement */}
+          <div className="mt-4 flex justify-center">
+            <PrivacyBadge size="md" />
+          </div>
 
-          {(isUploading || isServerProcessing) && (
-            <div className="mt-6 rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-              {isServerProcessing ? (
+          {(isUploading || isServerProcessing || isActuallyUploading) && (
+            <div className={cn(
+              'mt-6 rounded-lg border p-4',
+              isDark 
+                ? 'border-neutral-800 bg-neutral-900/50' 
+                : 'border-neutral-200 bg-neutral-50'
+            )}>
+              {isActuallyUploading && currentProgress ? (
                 <>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-neutral-300 flex items-center gap-2">
+                    <span className={cn(
+                      'flex items-center gap-2',
+                      isDark ? 'text-neutral-300' : 'text-neutral-600'
+                    )}>
                       <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                      Analyzing video... This may take a moment
+                      Uploading video to server...
                     </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse"
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Running deepfake detection on extracted frames...
-                  </p>
-                </>
-              ) : currentProgress ? (
-                <>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-neutral-300">Uploading...</span>
-                    <span className="font-medium text-white">
+                    <span className={cn(
+                      'font-medium',
+                      isDark ? 'text-white' : 'text-neutral-900'
+                    )}>
                       {currentProgress.percentage}%
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
+                  <div className={cn(
+                    'h-2 overflow-hidden rounded-full',
+                    isDark ? 'bg-neutral-800' : 'bg-neutral-200'
+                  )}>
                     <div
                       className="h-full bg-blue-500 transition-all duration-300"
                       style={{ width: `${currentProgress.percentage}%` }}
                     />
                   </div>
+                  <p className={cn(
+                    'mt-2 text-xs',
+                    isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  )}>
+                    Transferring file data...
+                  </p>
+                </>
+              ) : isServerProcessing ? (
+                <>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className={cn(
+                      'flex items-center gap-2',
+                      isDark ? 'text-neutral-300' : 'text-neutral-600'
+                    )}>
+                      <span className="inline-block h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
+                      Analyzing video... This may take a moment
+                    </span>
+                  </div>
+                  <div className={cn(
+                    'h-2 overflow-hidden rounded-full',
+                    isDark ? 'bg-neutral-800' : 'bg-neutral-200'
+                  )}>
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <p className={cn(
+                    'mt-2 text-xs',
+                    isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  )}>
+                    Running deepfake detection on extracted frames...
+                  </p>
                 </>
               ) : (
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="text-neutral-300 flex items-center gap-2">
+                  <span className={cn(
+                    'flex items-center gap-2',
+                    isDark ? 'text-neutral-300' : 'text-neutral-600'
+                  )}>
                     <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
                     Preparing upload...
                   </span>
@@ -153,94 +215,130 @@ export default function AnalyzePage() {
           title="Analysis Settings"
           description="Configure detection parameters"
           action={
-            <Settings className="h-5 w-5 text-neutral-400" />
+            <Settings className={isDark ? 'h-5 w-5 text-neutral-400' : 'h-5 w-5 text-neutral-500'} />
           }
         />
         <CardContent>
           <div className="space-y-4">
             {/* Ensemble Models */}
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-white">
+                  <h3 className={cn(
+                    'font-medium',
+                    isDark ? 'text-white' : 'text-neutral-900'
+                  )}>
                     Use Ensemble Models
                   </h3>
                   {options.useEnsemble && (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                 </div>
-                <p className="mt-1 text-sm text-neutral-400">
+                <p className={cn(
+                  'mt-1 text-sm',
+                  isDark ? 'text-neutral-400' : 'text-neutral-500'
+                )}>
                   Combine multiple models for higher accuracy (recommended)
                 </p>
               </div>
               <button
                 onClick={() => toggleOption('useEnsemble')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  options.useEnsemble ? 'bg-blue-600' : 'bg-neutral-700'
-                }`}
+                className={cn(
+                  'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors',
+                  options.useEnsemble 
+                    ? 'bg-blue-600' 
+                    : isDark ? 'bg-neutral-700' : 'bg-neutral-300'
+                )}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={cn(
+                    'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
                     options.useEnsemble ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  )}
                 />
               </button>
             </div>
 
             {/* Heatmaps */}
-            <div className="flex items-start justify-between border-t border-neutral-800 pt-4">
+            <div className={cn(
+              'flex items-start justify-between gap-4 border-t pt-4',
+              isDark ? 'border-neutral-800' : 'border-neutral-200'
+            )}>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-white">
+                  <h3 className={cn(
+                    'font-medium',
+                    isDark ? 'text-white' : 'text-neutral-900'
+                  )}>
                     Generate Heatmaps
                   </h3>
                   {options.generateHeatmaps && (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                 </div>
-                <p className="mt-1 text-sm text-neutral-400">
+                <p className={cn(
+                  'mt-1 text-sm',
+                  isDark ? 'text-neutral-400' : 'text-neutral-500'
+                )}>
                   Visual highlighting of suspicious areas
                 </p>
               </div>
               <button
                 onClick={() => toggleOption('generateHeatmaps')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  options.generateHeatmaps ? 'bg-blue-600' : 'bg-neutral-700'
-                }`}
+                className={cn(
+                  'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors',
+                  options.generateHeatmaps 
+                    ? 'bg-blue-600' 
+                    : isDark ? 'bg-neutral-700' : 'bg-neutral-300'
+                )}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={cn(
+                    'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
                     options.generateHeatmaps ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  )}
                 />
               </button>
             </div>
 
             {/* Frame Extraction */}
-            <div className="flex items-start justify-between border-t border-neutral-800 pt-4">
+            <div className={cn(
+              'flex items-start justify-between gap-4 border-t pt-4',
+              isDark ? 'border-neutral-800' : 'border-neutral-200'
+            )}>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-white">
+                  <h3 className={cn(
+                    'font-medium',
+                    isDark ? 'text-white' : 'text-neutral-900'
+                  )}>
                     Extract Key Frames
                   </h3>
                   {options.extractFrames && (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                 </div>
-                <p className="mt-1 text-sm text-neutral-400">
+                <p className={cn(
+                  'mt-1 text-sm',
+                  isDark ? 'text-neutral-400' : 'text-neutral-500'
+                )}>
                   Save individual frames for detailed inspection
                 </p>
               </div>
               <button
                 onClick={() => toggleOption('extractFrames')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  options.extractFrames ? 'bg-blue-600' : 'bg-neutral-700'
-                }`}
+                className={cn(
+                  'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors',
+                  options.extractFrames 
+                    ? 'bg-blue-600' 
+                    : isDark ? 'bg-neutral-700' : 'bg-neutral-300'
+                )}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={cn(
+                    'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
                     options.extractFrames ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  )}
                 />
               </button>
             </div>
@@ -255,25 +353,37 @@ export default function AnalyzePage() {
           action={<AlertCircle className="h-5 w-5 text-blue-400" />}
         />
         <CardContent>
-          <div className="space-y-3 text-sm text-neutral-400">
+          <div className={cn(
+            'space-y-3 text-sm',
+            isDark ? 'text-neutral-400' : 'text-neutral-500'
+          )}>
             <div className="flex items-start gap-3">
-              <FileVideo className="mt-0.5 h-4 w-4 flex-shrink-0 text-neutral-500" />
+              <FileVideo className={cn(
+                'mt-0.5 h-4 w-4 flex-shrink-0',
+                isDark ? 'text-neutral-500' : 'text-neutral-400'
+              )} />
               <div>
-                <p className="text-neutral-300">Video Files</p>
+                <p className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>Video Files</p>
                 <p>MP4, MOV, AVI, MKV, WebM</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Upload className="mt-0.5 h-4 w-4 flex-shrink-0 text-neutral-500" />
+              <Upload className={cn(
+                'mt-0.5 h-4 w-4 flex-shrink-0',
+                isDark ? 'text-neutral-500' : 'text-neutral-400'
+              )} />
               <div>
-                <p className="text-neutral-300">Max File Size</p>
+                <p className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>Max File Size</p>
                 <p>500 MB per video</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-neutral-500" />
+              <AlertCircle className={cn(
+                'mt-0.5 h-4 w-4 flex-shrink-0',
+                isDark ? 'text-neutral-500' : 'text-neutral-400'
+              )} />
               <div>
-                <p className="text-neutral-300">Processing Time</p>
+                <p className={isDark ? 'text-neutral-300' : 'text-neutral-700'}>Processing Time</p>
                 <p>Typically 30-60 seconds depending on video length</p>
               </div>
             </div>

@@ -2,6 +2,12 @@
  * Results Page
  *
  * Display analysis results with detailed breakdown.
+ * Features:
+ * - Video preview player for completed analyses
+ * - Processing state with animated progress
+ * - Theme-aware styling using Tailwind dark mode classes
+ * - Responsive layout
+ * - Privacy assurance messaging
  */
 
 import { useParams, Link } from 'react-router-dom';
@@ -13,13 +19,117 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
+  Play,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { ResultDisplay } from '@/components/analysis/ResultDisplay';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
 import { Badge } from '@/components/ui/Badge';
+import { PrivacyBadge } from '@/components/ui/PrivacyBanner';
 import { useAnalysis } from '@/hooks';
+import { cn } from '@/utils';
+
+// =============================================================================
+// Helper: Get video URL from analysis
+// =============================================================================
+
+function getVideoUrl(analysis: { mediaFile?: { id?: string; fileName?: string; fileUrl?: string | null } } | null): string | null {
+  // Use the fileUrl from the backend if available
+  if (analysis?.mediaFile?.fileUrl) {
+    return analysis.mediaFile.fileUrl;
+  }
+  
+  // Fallback: construct URL (shouldn't be needed with backend fix)
+  if (!analysis?.mediaFile?.fileName) return null;
+  return null;
+}
+
+// =============================================================================
+// Video Player Component
+// =============================================================================
+
+function VideoPlayer({ src, fileName }: { src: string; fileName: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  if (hasError) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-8 text-neutral-500 dark:text-neutral-400">
+        <AlertCircle className="mb-4 h-12 w-12 opacity-50" />
+        <p className="text-center">Unable to load video preview</p>
+        <p className="mt-1 text-sm opacity-75">{fileName}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full w-full group">
+      <video
+        ref={videoRef}
+        src={src}
+        className="h-full w-full object-contain"
+        muted={isMuted}
+        playsInline
+        loop
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onError={() => setHasError(true)}
+      />
+      
+      {/* Video Controls Overlay */}
+      <div className={cn(
+        'absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100',
+        !isPlaying && 'opacity-100'
+      )}>
+        <button
+          onClick={togglePlay}
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform hover:scale-110"
+        >
+          {isPlaying ? (
+            <div className="flex gap-1">
+              <div className="h-6 w-2 rounded bg-white" />
+              <div className="h-6 w-2 rounded bg-white" />
+            </div>
+          ) : (
+            <Play className="h-8 w-8 text-white ml-1" fill="white" />
+          )}
+        </button>
+      </div>
+
+      {/* Mute button */}
+      <button
+        onClick={toggleMute}
+        className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-opacity opacity-0 group-hover:opacity-100"
+      >
+        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
+    </div>
+  );
+}
 
 // =============================================================================
 // Component
@@ -35,7 +145,7 @@ export default function ResultsPage() {
       <div className="flex h-[60vh] items-center justify-center">
         <div className="text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-400" />
-          <p className="mt-4 text-neutral-400">Loading analysis...</p>
+          <p className="mt-4 text-neutral-500 dark:text-neutral-400">Loading analysis...</p>
         </div>
       </div>
     );
@@ -47,8 +157,8 @@ export default function ResultsPage() {
       <div className="flex h-[60vh] items-center justify-center">
         <Card variant="glass" className="max-w-md p-8 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-danger-400" />
-          <h2 className="mt-4 text-xl font-semibold text-white">Analysis Not Found</h2>
-          <p className="mt-2 text-neutral-400">
+          <h2 className="mt-4 text-xl font-semibold text-neutral-900 dark:text-white">Analysis Not Found</h2>
+          <p className="mt-2 text-neutral-500 dark:text-neutral-400">
             The analysis you're looking for doesn't exist or has been deleted.
           </p>
           <Link to="/analyze" className="mt-6 inline-block">
@@ -62,11 +172,11 @@ export default function ResultsPage() {
   // Processing state
   if (analysis.status === 'pending' || analysis.status === 'processing') {
     return (
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="mx-auto max-w-2xl space-y-8 px-4">
         {/* Back button */}
         <Link
           to="/history"
-          className="inline-flex items-center gap-2 text-neutral-400 transition-colors hover:text-white"
+          className="inline-flex items-center gap-2 transition-colors text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to history
@@ -89,16 +199,16 @@ export default function ResultsPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-500/20"
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-500/10 dark:bg-primary-500/20"
             >
-              <Loader2 className="h-10 w-10 animate-spin text-primary-400" />
+              <Loader2 className="h-10 w-10 animate-spin text-primary-500 dark:text-primary-400" />
             </motion.div>
 
-            <h2 className="mt-6 text-2xl font-bold text-white">
+            <h2 className="mt-6 text-xl font-bold sm:text-2xl text-neutral-900 dark:text-white">
               {analysis.status === 'pending' ? 'Queued for Processing' : 'Analyzing Media'}
             </h2>
 
-            <p className="mt-2 text-neutral-400">
+            <p className="mt-2 text-neutral-500 dark:text-neutral-400">
               {analysis.status === 'pending'
                 ? 'Your analysis is in queue and will start shortly.'
                 : 'Our AI models are analyzing your media for signs of manipulation.'}
@@ -123,9 +233,12 @@ export default function ResultsPage() {
             </div>
 
             {/* File info */}
-            <div className="mt-8 rounded-xl bg-neutral-800/30 p-4">
-              <p className="text-sm text-neutral-400">
-                <strong className="text-white">File:</strong> {analysis.mediaFile?.fileName || 'Uploaded file'}
+            <div className="mt-8 rounded-xl p-4 bg-neutral-100 dark:bg-neutral-800/30">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <strong className="text-neutral-900 dark:text-white">
+                  File:
+                </strong>{' '}
+                {analysis.mediaFile?.fileName || 'Uploaded file'}
               </p>
             </div>
           </Card>
@@ -137,33 +250,33 @@ export default function ResultsPage() {
   // Failed state
   if (analysis.status === 'failed') {
     return (
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="mx-auto max-w-2xl space-y-8 px-4">
         <Link
           to="/history"
-          className="inline-flex items-center gap-2 text-neutral-400 transition-colors hover:text-white"
+          className="inline-flex items-center gap-2 transition-colors text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to history
         </Link>
 
         <Card variant="glass" padding="lg" className="text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-danger-500/20">
-            <AlertCircle className="h-10 w-10 text-danger-400" />
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-danger-500/10 dark:bg-danger-500/20">
+            <AlertCircle className="h-10 w-10 text-danger-500 dark:text-danger-400" />
           </div>
 
-          <h2 className="mt-6 text-2xl font-bold text-white">Analysis Failed</h2>
+          <h2 className="mt-6 text-xl font-bold sm:text-2xl text-neutral-900 dark:text-white">Analysis Failed</h2>
 
-          <p className="mt-2 text-neutral-400">
+          <p className="mt-2 text-neutral-500 dark:text-neutral-400">
             {analysis.errorMessage || 'An unexpected error occurred during analysis.'}
           </p>
 
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
             <Button variant="secondary" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
               Retry Analysis
             </Button>
             <Link to="/analyze">
-              <Button>Upload New File</Button>
+              <Button className="w-full sm:w-auto">Upload New File</Button>
             </Link>
           </div>
         </Card>
@@ -171,14 +284,17 @@ export default function ResultsPage() {
     );
   }
 
+  // Get video URL for preview
+  const videoUrl = getVideoUrl(analysis);
+
   // Completed state
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Link
           to="/history"
-          className="inline-flex items-center gap-2 text-neutral-400 transition-colors hover:text-white"
+          className="inline-flex items-center gap-2 transition-colors text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to history
@@ -187,11 +303,11 @@ export default function ResultsPage() {
         <div className="flex gap-3">
           <Button variant="ghost" size="sm">
             <Share2 className="h-4 w-4" />
-            Share
+            <span className="hidden sm:inline">Share</span>
           </Button>
           <Button variant="secondary" size="sm">
             <Download className="h-4 w-4" />
-            Export Report
+            <span className="hidden sm:inline">Export Report</span>
           </Button>
         </div>
       </div>
@@ -212,16 +328,22 @@ export default function ResultsPage() {
           transition={{ delay: 0.1 }}
         >
           <Card variant="default">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-white">Source Media</h3>
-              <p className="mt-1 text-sm text-neutral-400">{analysis.mediaFile.fileName}</p>
+            <div className="p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Source Media</h3>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{analysis.mediaFile.fileName}</p>
             </div>
 
-            <div className="aspect-video bg-neutral-800">
-              {/* Video/image preview would go here */}
-              <div className="flex h-full items-center justify-center text-neutral-500">
-                Media preview
-              </div>
+            <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 relative">
+              {videoUrl ? (
+                <VideoPlayer src={videoUrl} fileName={analysis.mediaFile.fileName} />
+              ) : (
+                <div className="flex h-full items-center justify-center text-neutral-400 dark:text-neutral-500">
+                  <div className="text-center">
+                    <AlertCircle className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                    <p>Media preview unavailable</p>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </motion.div>

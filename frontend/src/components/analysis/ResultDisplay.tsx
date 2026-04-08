@@ -83,18 +83,18 @@ function StatCard({
   trend?: 'up' | 'down';
 }) {
   return (
-    <div className="rounded-xl bg-neutral-800/30 p-4">
-      <div className="flex items-center gap-2 text-neutral-400">
+    <div className="rounded-xl p-4 bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/50">
+      <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
         <Icon className="h-4 w-4" />
         <span className="text-sm">{label}</span>
       </div>
       <div className="mt-2 flex items-center gap-2">
-        <span className="text-xl font-semibold text-white">{value}</span>
+        <span className="text-xl font-semibold text-neutral-900 dark:text-white">{value}</span>
         {trend && (
           <span
             className={cn(
               'flex items-center text-xs',
-              trend === 'up' ? 'text-success-400' : 'text-danger-400'
+              trend === 'up' ? 'text-success-500 dark:text-success-400' : 'text-danger-500 dark:text-danger-400'
             )}
           >
             {trend === 'up' ? (
@@ -136,7 +136,7 @@ export function ResultDisplay({ analysis, className }: ResultDisplayProps) {
               {confidence !== null && <ConfidenceBadge confidence={confidence} />}
             </div>
 
-            <h2 className="mt-3 text-2xl font-bold text-white">
+            <h2 className="mt-3 text-2xl font-bold text-neutral-900 dark:text-white">
               {prediction === 'fake'
                 ? 'Manipulation Detected'
                 : prediction === 'real'
@@ -144,7 +144,7 @@ export function ResultDisplay({ analysis, className }: ResultDisplayProps) {
                   : 'Analysis Uncertain'}
             </h2>
 
-            <p className="mt-2 text-neutral-400">
+            <p className="mt-2 text-neutral-600 dark:text-neutral-300">
               {prediction === 'fake'
                 ? 'Our AI models have detected signs of manipulation in this media.'
                 : prediction === 'real'
@@ -217,7 +217,7 @@ function ModelResultRow({ result }: { result: ModelResult }) {
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-center justify-between rounded-xl bg-neutral-800/30 p-4"
+      className="flex items-center justify-between rounded-xl p-4 bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/50"
     >
       {/* Model info */}
       <div className="flex items-center gap-4">
@@ -225,8 +225,8 @@ function ModelResultRow({ result }: { result: ModelResult }) {
           className={cn(
             'flex h-10 w-10 items-center justify-center rounded-xl',
             prediction === 'fake'
-              ? 'bg-danger-500/20 text-danger-400'
-              : 'bg-success-500/20 text-success-400'
+              ? 'bg-danger-500/20 text-danger-500 dark:text-danger-400'
+              : 'bg-success-500/20 text-success-500 dark:text-success-400'
           )}
         >
           {prediction === 'fake' ? (
@@ -237,8 +237,8 @@ function ModelResultRow({ result }: { result: ModelResult }) {
         </div>
 
         <div>
-          <p className="font-medium text-white">{modelName}</p>
-          <p className="text-sm text-neutral-400">
+          <p className="font-medium text-neutral-900 dark:text-white">{modelName}</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Processed in {(processingTime * 1000).toFixed(0)}ms
           </p>
         </div>
@@ -248,7 +248,7 @@ function ModelResultRow({ result }: { result: ModelResult }) {
       <div className="flex items-center gap-6">
         {/* Score bars */}
         <div className="hidden w-48 sm:block">
-          <div className="flex h-2 overflow-hidden rounded-full bg-neutral-700">
+          <div className="flex h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
             <div
               className="bg-success-500 transition-all duration-500"
               style={{ width: `${(1 - fakeScore) * 100}%` }}
@@ -258,7 +258,7 @@ function ModelResultRow({ result }: { result: ModelResult }) {
               style={{ width: `${fakeScore * 100}%` }}
             />
           </div>
-          <div className="mt-1 flex justify-between text-xs text-neutral-500">
+          <div className="mt-1 flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
             <span>Real {formatPercent(1 - fakeScore, 0)}</span>
             <span>Fake {formatPercent(fakeScore, 0)}</span>
           </div>

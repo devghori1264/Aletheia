@@ -4,7 +4,9 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  // Load environment variables (for potential future use)
+  const _env = loadEnv(mode, process.cwd(), '');
+  void _env; // Suppress unused variable warning
 
   return {
     plugins: [react()],
@@ -29,12 +31,17 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:8000',
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/media': {
+          target: 'http://localhost:8000',
           changeOrigin: true,
           secure: false,
         },
         '/ws': {
-          target: env.VITE_WS_URL || 'ws://localhost:8000',
+          target: 'ws://localhost:8000',
           ws: true,
           changeOrigin: true,
         },

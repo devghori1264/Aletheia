@@ -62,15 +62,15 @@ export function Progress({
       {/* Value display */}
       {showValue && (
         <div className={cn('mb-2 flex justify-between', sizeStyles[size].text)}>
-          <span className="text-neutral-400">Progress</span>
-          <span className="font-medium text-white">{percentage.toFixed(0)}%</span>
+          <span className="text-neutral-500 dark:text-neutral-400">Progress</span>
+          <span className="font-medium text-neutral-900 dark:text-white">{percentage.toFixed(0)}%</span>
         </div>
       )}
 
       {/* Progress bar container */}
       <div
         className={cn(
-          'w-full overflow-hidden rounded-full bg-neutral-800',
+          'w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700',
           sizeStyles[size].bar
         )}
         role="progressbar"
@@ -155,13 +155,13 @@ export function CircularProgress({
           </linearGradient>
         </defs>
 
-        {/* Background circle */}
+        {/* Background circle - theme aware */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#262626"
+          className="stroke-neutral-200 dark:stroke-neutral-700"
           strokeWidth={strokeWidth}
         />
 
@@ -184,7 +184,7 @@ export function CircularProgress({
       {/* Center value */}
       {showValue && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-semibold text-white">
+          <span className="text-sm font-semibold text-neutral-900 dark:text-white">
             {percentage.toFixed(0)}%
           </span>
         </div>

@@ -18,7 +18,8 @@ from .views import (
 
 # Create router for viewsets
 router = DefaultRouter()
-router.register(r"analysis", AnalysisViewSet, basename="analysis")
+# Empty prefix because this is already included under /api/v1/analysis/
+router.register(r"", AnalysisViewSet, basename="analysis")
 router.register(r"batch", BatchViewSet, basename="batch")
 router.register(r"models", ModelViewSet, basename="models")
 

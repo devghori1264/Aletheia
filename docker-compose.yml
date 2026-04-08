@@ -4,8 +4,6 @@
 # Development environment with all services
 # =============================================================================
 
-version: "3.9"
-
 services:
   # ===========================================================================
   # API Service (Django)
@@ -66,13 +64,6 @@ services:
     depends_on:
       - api
       - redis
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     networks:
       - aletheia-network
 

@@ -8,17 +8,17 @@ const config: Config = {
       colors: {
         // Primary brand colors
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#fcf3ee',
+          100: '#f8e4d8',
+          200: '#f1c5af',
+          300: '#e9a385',
+          400: '#e1835e',
+          500: '#CC6F3E',
+          600: '#b65c2f',
+          700: '#954923',
+          800: '#75391c',
+          900: '#5c2d18',
+          950: '#32150a',
         },
         // Accent color - for highlights and CTAs
         accent: {
@@ -76,21 +76,21 @@ const config: Config = {
           900: '#78350f',
           950: '#451a03',
         },
-        // Neutral colors for dark mode
+        // Neutral colors - Deep Oceanic theme for dark mode
         neutral: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a3a3a3',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          850: '#1f1f1f',
-          900: '#171717',
-          925: '#121212',
-          950: '#0a0a0a',
+          50: '#F8FAFC',    // Light text for dark mode
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',   // Muted text for dark mode
+          500: '#64748B',   // Secondary text
+          600: '#475569',
+          700: '#334155',   
+          800: '#1E293B',   // Card/elevated surfaces in dark mode
+          850: '#172033',
+          900: '#0F172A',   // Main background in dark mode
+          925: '#0C1322',
+          950: '#0A101E',   // Deepest background
         },
       },
       fontFamily: {

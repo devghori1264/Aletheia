@@ -37,8 +37,8 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="mt-1 text-neutral-400">Manage your preferences and account</p>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Settings</h1>
+        <p className="mt-1 text-neutral-500 dark:text-neutral-400">Manage your preferences and account</p>
       </div>
 
       {/* Appearance */}
@@ -122,14 +122,14 @@ export default function SettingsPage() {
                 onToggle={() => setAutoDelete(!autoDelete)}
               />
 
-              <div className="flex items-center justify-between rounded-xl bg-neutral-800/30 p-4">
+              <div className="flex items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800/30">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-800">
-                    <Download className="h-5 w-5 text-neutral-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-neutral-800 shadow-sm border border-neutral-200 dark:border-neutral-700">
+                    <Download className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
                   </div>
                   <div>
-                    <p className="font-medium text-white">Export Data</p>
-                    <p className="text-sm text-neutral-400">
+                    <p className="font-medium text-neutral-900 dark:text-white">Export Data</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Download all your analysis data
                     </p>
                   </div>
@@ -156,9 +156,9 @@ export default function SettingsPage() {
             action={<Badge variant="accent">Coming Soon</Badge>}
           />
           <CardContent>
-            <div className="rounded-xl border border-dashed border-neutral-700 p-8 text-center">
-              <Key className="mx-auto h-8 w-8 text-neutral-600" />
-              <p className="mt-4 text-neutral-400">
+            <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-800/30">
+              <Key className="mx-auto h-8 w-8 text-neutral-400 dark:text-neutral-600" />
+              <p className="mt-4 text-neutral-500 dark:text-neutral-400">
                 API access will be available in a future update
               </p>
             </div>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card variant="default" className="border-danger-500/20">
+        <Card variant="default" className="border-danger-200 bg-danger-50 dark:border-danger-500/20 dark:bg-transparent">
           <CardHeader
             title="Danger Zone"
             description="Irreversible and destructive actions"
@@ -180,8 +180,8 @@ export default function SettingsPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-white">Delete All Data</p>
-                <p className="text-sm text-neutral-400">
+                <p className="font-medium text-danger-600 dark:text-white">Delete All Data</p>
+                <p className="text-sm text-danger-500 dark:text-neutral-400">
                   Permanently delete all your analyses and account data
                 </p>
               </div>
@@ -194,7 +194,7 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* Version Info */}
-      <div className="text-center text-sm text-neutral-500">
+      <div className="text-center text-sm text-neutral-500 dark:text-neutral-500">
         <p>Aletheia v1.0.0</p>
         <p className="mt-1">Enterprise Deepfake Detection Platform</p>
       </div>
@@ -223,8 +223,8 @@ function ThemeOption({
       className={cn(
         'flex items-center gap-3 rounded-xl px-4 py-3 transition-all',
         selected
-          ? 'bg-primary-500/20 text-primary-400 ring-2 ring-primary-500/50'
-          : 'bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 hover:text-white'
+          ? 'bg-primary-50 text-primary-600 ring-2 ring-primary-500 dark:bg-primary-500/20 dark:text-primary-400 dark:ring-primary-500/50'
+          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900 border border-transparent dark:bg-neutral-800/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white dark:border-neutral-800'
       )}
     >
       <Icon className="h-5 w-5" />
@@ -249,31 +249,31 @@ function SettingToggle({
   return (
     <button
       onClick={onToggle}
-      className="flex w-full items-center justify-between rounded-xl bg-neutral-800/30 p-4 text-left transition-colors hover:bg-neutral-800/50"
+      className="flex w-full items-center justify-between rounded-xl bg-neutral-100 p-4 text-left transition-colors hover:bg-neutral-200 dark:bg-neutral-800/30 dark:hover:bg-neutral-800/50 border border-transparent dark:border-neutral-800"
     >
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
-            enabled ? 'bg-primary-500/20 text-primary-400' : 'bg-neutral-800 text-neutral-500'
+            'flex h-10 w-10 items-center justify-center rounded-xl transition-colors shadow-sm',
+            enabled ? 'bg-primary-500/10 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400 border border-primary-500/20' : 'bg-white text-neutral-500 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700'
           )}
         >
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <p className="font-medium text-white">{title}</p>
-          <p className="text-sm text-neutral-400">{description}</p>
+          <p className="font-medium text-neutral-900 dark:text-white">{title}</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{description}</p>
         </div>
       </div>
       <div
         className={cn(
           'relative h-6 w-11 rounded-full transition-colors',
-          enabled ? 'bg-primary-500' : 'bg-neutral-700'
+          enabled ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-700'
         )}
       >
         <div
           className={cn(
-            'absolute top-1 h-4 w-4 rounded-full bg-white transition-all',
+            'absolute top-1 h-4 w-4 rounded-full bg-white transition-all shadow-sm',
             enabled ? 'left-6' : 'left-1'
           )}
         />

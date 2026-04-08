@@ -238,8 +238,19 @@ class InferenceEngine:
         
         elif model_name == "ensemble":
             from ml.architectures.ensemble import EnsembleModel
+            from ml.architectures.efficientnet_lstm import EfficientNetLSTM
             
-            model = EnsembleModel()
+            # Create ensemble with EfficientNet-LSTM as the primary model
+            # Using ImageNet pretrained weights for feature extraction
+            efficientnet_model = EfficientNetLSTM(pretrained=True)
+            efficientnet_model = efficientnet_model.to(self._device)
+            efficientnet_model.eval()
+            
+            model = EnsembleModel(
+                models={"efficientnet_lstm": efficientnet_model},
+                weights={"efficientnet_lstm": 1.0},
+                strategy="weighted",
+            )
         
         else:
             raise ModelNotFoundError(

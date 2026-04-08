@@ -572,6 +572,16 @@ class MediaFile(models.Model):
     
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API response."""
+        # Build the file URL - use the actual file path
+        file_url = None
+        if self.file and self.file.name:
+            file_url = f"/media/{self.file.name}"
+        
+        # Build thumbnail URL
+        thumbnail_url = None
+        if self.thumbnail_path:
+            thumbnail_url = f"/media/{self.thumbnail_path}"
+        
         return {
             "id": str(self.id),
             "original_filename": self.original_filename,
@@ -586,7 +596,8 @@ class MediaFile(models.Model):
             "fps": self.fps,
             "frame_count": self.frame_count,
             "has_audio": self.has_audio,
-            "thumbnail_url": self.thumbnail_path,
+            "file_url": file_url,
+            "thumbnail_url": thumbnail_url,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
     

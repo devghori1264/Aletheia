@@ -283,6 +283,7 @@ class AnalysisViewSet(viewsets.ViewSet):
                 "width": media_data.get("width") if media_data.get("resolution", "Unknown") != "Unknown" else None,
                 "height": media_data.get("height") if media_data.get("resolution", "Unknown") != "Unknown" else None,
                 "frameRate": media_data.get("fps"),
+                "fileUrl": media_data.get("file_url"),
                 "thumbnailUrl": media_data.get("thumbnail_url"),
                 "createdAt": media_data.get("created_at", ""),
             },
@@ -425,6 +426,50 @@ class AnalysisViewSet(viewsets.ViewSet):
                 code=e.error_code,
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+    
+    @action(detail=False, methods=["get"], url_path="stats")
+    def stats(self, request: Request) -> Response:
+        """
+        Get analysis statistics.
+        
+        Returns summary statistics including total analyses, 
+        detection counts, and average processing time.
+        """
+        from django.db.models import Avg, Count, Q
+        from detection.models import Analysis
+        
+        try:
+            # Get all completed analyses
+            analyses = Analysis.objects.filter(status="completed")
+            
+            # Calculate statistics
+            total = analyses.count()
+            fake_count = analyses.filter(result="fake").count()
+            real_count = analyses.filter(result="real").count()
+            
+            # Calculate averages
+            avg_stats = analyses.aggregate(
+                avg_confidence=Avg("confidence"),
+                avg_processing_time=Avg("processing_time"),
+            )
+            
+            return Response({
+                "totalAnalyses": total,
+                "fakeDetected": fake_count,
+                "realDetected": real_count,
+                "averageConfidence": round(avg_stats["avg_confidence"] or 0, 2),
+                "averageProcessingTime": round(avg_stats["avg_processing_time"] or 0, 2),
+            })
+        
+        except Exception as e:
+            logger.exception(f"Error fetching stats: {e}")
+            return Response({
+                "totalAnalyses": 0,
+                "fakeDetected": 0,
+                "realDetected": 0,
+                "averageConfidence": 0,
+                "averageProcessingTime": 0,
+            })
 
 
 # =============================================================================

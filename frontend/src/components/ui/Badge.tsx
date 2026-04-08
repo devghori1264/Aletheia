@@ -25,12 +25,12 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 // =============================================================================
 
 const variantStyles: Record<BadgeVariant, string> = {
-  success: 'bg-success-500/10 text-success-400 border-success-500/20',
-  danger: 'bg-danger-500/10 text-danger-400 border-danger-500/20',
-  warning: 'bg-warning-500/10 text-warning-400 border-warning-500/20',
-  neutral: 'bg-neutral-700/50 text-neutral-300 border-neutral-600/50',
-  primary: 'bg-primary-500/10 text-primary-400 border-primary-500/20',
-  accent: 'bg-accent-500/10 text-accent-400 border-accent-500/20',
+  success: 'bg-success-100 text-success-700 border-success-200 dark:bg-success-500/10 dark:text-success-400 dark:border-success-500/20',
+  danger: 'bg-danger-100 text-danger-700 border-danger-200 dark:bg-danger-500/10 dark:text-danger-400 dark:border-danger-500/20',
+  warning: 'bg-warning-100 text-warning-700 border-warning-200 dark:bg-warning-500/10 dark:text-warning-400 dark:border-warning-500/20',
+  neutral: 'bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-700/50 dark:text-neutral-300 dark:border-neutral-600/50',
+  primary: 'bg-primary-100 text-primary-700 border-primary-200 dark:bg-primary-500/10 dark:text-primary-400 dark:border-primary-500/20',
+  accent: 'bg-accent-100 text-accent-700 border-accent-200 dark:bg-accent-500/10 dark:text-accent-400 dark:border-accent-500/20',
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

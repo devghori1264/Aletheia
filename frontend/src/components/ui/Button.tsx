@@ -2,11 +2,13 @@
  * Button Component
  *
  * Reusable button with variants, sizes, and loading states.
+ * Supports dark/light theme modes.
  */
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/utils';
+import { useTheme } from '@/store';
 
 // =============================================================================
 // Types
@@ -27,35 +29,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // =============================================================================
 // Styles
 // =============================================================================
-
-const variantStyles: Record<ButtonVariant, string> = {
-  primary: cn(
-    'bg-primary-600 text-white',
-    'hover:bg-primary-500 hover:shadow-glow-sm',
-    'focus:ring-primary-500',
-    'disabled:hover:bg-primary-600 disabled:hover:shadow-none'
-  ),
-  secondary: cn(
-    'bg-neutral-800 text-neutral-100 border border-neutral-700',
-    'hover:bg-neutral-700 hover:border-neutral-600',
-    'focus:ring-neutral-500'
-  ),
-  ghost: cn(
-    'text-neutral-300',
-    'hover:bg-neutral-800 hover:text-neutral-100',
-    'focus:ring-neutral-500'
-  ),
-  danger: cn(
-    'bg-danger-600 text-white',
-    'hover:bg-danger-500 hover:shadow-glow-danger',
-    'focus:ring-danger-500'
-  ),
-  link: cn(
-    'text-primary-400 underline-offset-4',
-    'hover:text-primary-300 hover:underline',
-    'focus:ring-primary-500'
-  ),
-};
 
 const sizeStyles: Record<ButtonSize, string> = {
   sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
@@ -91,7 +64,43 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
     const isDisabled = disabled || isLoading;
+
+    // Theme-aware variant styles
+    const variantStyles: Record<ButtonVariant, string> = {
+      primary: cn(
+        'bg-primary-600 text-white',
+        'hover:bg-primary-500',
+        isDark ? 'hover:shadow-glow-sm' : 'hover:shadow-lg',
+        'focus:ring-primary-500',
+        'disabled:hover:bg-primary-600 disabled:hover:shadow-none'
+      ),
+      secondary: cn(
+        isDark
+          ? 'bg-neutral-800 text-neutral-100 border border-neutral-700 hover:bg-neutral-700 hover:border-neutral-600'
+          : 'bg-neutral-100 text-neutral-800 border border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400',
+        'focus:ring-neutral-500'
+      ),
+      ghost: cn(
+        isDark
+          ? 'text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100'
+          : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
+        'focus:ring-neutral-500'
+      ),
+      danger: cn(
+        'bg-danger-600 text-white',
+        'hover:bg-danger-500',
+        isDark ? 'hover:shadow-glow-danger' : 'hover:shadow-lg',
+        'focus:ring-danger-500'
+      ),
+      link: cn(
+        'text-primary-400 underline-offset-4',
+        'hover:text-primary-300 hover:underline',
+        'focus:ring-primary-500'
+      ),
+    };
 
     return (
       <button
@@ -101,7 +110,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           // Base styles
           'inline-flex items-center justify-center font-medium',
           'transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-neutral-950',
+          'focus:outline-none focus:ring-2 focus:ring-offset-2',
+          isDark ? 'focus:ring-offset-neutral-950' : 'focus:ring-offset-white',
           'disabled:opacity-50 disabled:cursor-not-allowed',
 
           // Variant styles

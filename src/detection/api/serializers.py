@@ -144,9 +144,10 @@ class AnalysisSubmitSerializer(serializers.Serializer):
         help_text="Video or image file to analyze",
     )
     
-    config = AnalysisConfigSerializer(
+    config = serializers.JSONField(
         required=False,
-        help_text="Analysis configuration options",
+        default=dict,
+        help_text="Analysis configuration options (JSON)",
     )
     
     def validate_file(self, value):
@@ -154,6 +155,35 @@ class AnalysisSubmitSerializer(serializers.Serializer):
         upload_serializer = MediaUploadSerializer(data={"file": value})
         upload_serializer.is_valid(raise_exception=True)
         return value
+    
+    def validate_config(self, value):
+        """Validate and parse config field."""
+        import json
+        
+        # Handle empty string or None
+        if not value or value == '':
+            return {}
+        
+        # If it's already a dict, validate it
+        if isinstance(value, dict):
+            config_serializer = AnalysisConfigSerializer(data=value)
+            if config_serializer.is_valid():
+                return config_serializer.validated_data
+            return value
+        
+        # If it's a string, try to parse as JSON
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, dict):
+                    config_serializer = AnalysisConfigSerializer(data=parsed)
+                    if config_serializer.is_valid():
+                        return config_serializer.validated_data
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+        
+        return {}
 
 
 class AnalysisResponseSerializer(serializers.Serializer):

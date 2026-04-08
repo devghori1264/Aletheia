@@ -106,8 +106,6 @@ tests/test1.mp4
 
 cypress/videos/
 cypress/screenshots/
-github_assets
 Documentation/ed_doc
 Django Application/static/json/
 start
-production

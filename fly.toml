@@ -1,0 +1,111 @@
+app = "aletheia"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+  [build.args]
+    PYTHON_VERSION = "3.11"
+    NODE_VERSION = "20"
+    NEXT_TELEMETRY_DISABLED = "1"
+
+[env]
+  ALETHEIA_ENVIRONMENT = "production"
+  PYTHONUNBUFFERED = "1"
+  PYTHONDONTWRITEBYTECODE = "1"
+  PYTHONPATH = "/app/src"
+
+  DJANGO_SETTINGS_MODULE = "aletheia.settings.flyio"
+  DEBUG = "false"
+
+  WEB_CONCURRENCY = "2"
+  GUNICORN_THREADS = "4"
+  GUNICORN_TIMEOUT = "300"
+  GUNICORN_KEEPALIVE = "5"
+
+  CELERY_TASK_ALWAYS_EAGER = "true"
+  ML_DEVICE = "cpu"
+  ML_PRECISION = "fp32"
+  ML_BATCH_SIZE = "4"
+  ML_NUM_WORKERS = "2"
+
+  MALLOC_ARENA_MAX = "2"
+
+  LOG_LEVEL = "INFO"
+  LOG_FORMAT = "json"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 8
+    hard_limit = 12
+
+  [http_service.machine_checks]
+    grace_period = "30s"
+
+  [http_service.http_options]
+    response_header_timeout = "300s"
+    idle_timeout = "300s"
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  timeout = "10s"
+  method = "GET"
+  path = "/health/"
+
+  [http_service.checks.headers]
+    User-Agent = "Fly-Health-Check"
+
+[[vm]]
+  size = "performance-2x"
+  memory = "4gb"
+  cpu_kind = "performance"
+  cpus = 2
+
+[processes]
+  app = """
+    gunicorn aletheia.wsgi:application \
+      --bind 0.0.0.0:8000 \
+      --workers ${WEB_CONCURRENCY:-2} \
+      --threads ${GUNICORN_THREADS:-4} \
+      --worker-class gthread \
+      --worker-tmp-dir /dev/shm \
+      --timeout ${GUNICORN_TIMEOUT:-300} \
+      --keep-alive ${GUNICORN_KEEPALIVE:-5} \
+      --max-requests 100 \
+      --max-requests-jitter 20 \
+      --graceful-timeout 30 \
+      --access-logfile - \
+      --error-logfile - \
+      --capture-output \
+      --enable-stdio-inheritance \
+      --preload
+  """
+
+[statics]
+  guest_path = "/app/staticfiles"
+  url_prefix = "/static/"
+
+[metrics]
+  port = 9091
+  path = "/metrics"
+
+[deploy]
+  strategy = "rolling"
+  release_command = "python src/manage.py collectstatic --noinput"
+
+[experimental]
+  auto_rollback = true
+
+[kill_signal]
+  signal = "SIGTERM"
+  timeout = "30s"

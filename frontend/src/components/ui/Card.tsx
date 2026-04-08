@@ -2,10 +2,12 @@
  * Card Component
  *
  * Versatile card container with glass morphism variants.
+ * Supports dark/light theme modes.
  */
 
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/utils';
+import { useTheme } from '@/store';
 
 // =============================================================================
 // Types
@@ -31,16 +33,6 @@ interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 // Styles
 // =============================================================================
 
-const variantStyles: Record<CardVariant, string> = {
-  default: 'bg-neutral-900/50 border border-neutral-800/50',
-  glass: cn(
-    'bg-white/[0.02] backdrop-blur-xl border border-white/5',
-    'before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/[0.08] before:to-transparent before:pointer-events-none before:rounded-inherit'
-  ),
-  elevated: 'bg-neutral-900 shadow-xl shadow-black/20 border border-neutral-800/30',
-  outlined: 'bg-transparent border border-neutral-700',
-};
-
 const paddingStyles: Record<CardPadding, string> = {
   none: 'p-0',
   sm: 'p-4',
@@ -65,11 +57,36 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
+
+    // Theme-aware variant styles
+    const variantStyles: Record<CardVariant, string> = {
+      default: isDark 
+        ? 'bg-neutral-900/50 border border-neutral-800/50' 
+        : 'bg-white border border-neutral-200 shadow-sm',
+      glass: cn(
+        isDark
+          ? 'bg-white/[0.02] backdrop-blur-xl border border-white/5'
+          : 'bg-white/80 backdrop-blur-xl border border-neutral-200 shadow-lg',
+        'before:absolute before:inset-0 before:bg-gradient-to-br before:pointer-events-none before:rounded-inherit',
+        isDark
+          ? 'before:from-white/[0.08] before:to-transparent'
+          : 'before:from-white/50 before:to-transparent'
+      ),
+      elevated: isDark
+        ? 'bg-neutral-900 shadow-xl shadow-black/20 border border-neutral-800/30'
+        : 'bg-white shadow-xl shadow-neutral-200/50 border border-neutral-100',
+      outlined: isDark
+        ? 'bg-transparent border border-neutral-700'
+        : 'bg-transparent border border-neutral-300',
+    };
+
     return (
       <div
         ref={ref}
         className={cn(
-          'relative overflow-hidden rounded-2xl',
+          'relative overflow-hidden rounded-2xl transition-colors duration-200',
           variantStyles[variant],
           paddingStyles[padding],
           hoverable && 'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
@@ -92,6 +109,9 @@ Card.displayName = 'Card';
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, title, description, action, children, ...props }, ref) => {
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
+
     return (
       <div
         ref={ref}
@@ -100,10 +120,16 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
       >
         <div className="flex-1">
           {title && (
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <h3 className={cn(
+              'text-lg font-semibold',
+              isDark ? 'text-white' : 'text-neutral-900'
+            )}>{title}</h3>
           )}
           {description && (
-            <p className="mt-1 text-sm text-neutral-400">{description}</p>
+            <p className={cn(
+              'mt-1 text-sm',
+              isDark ? 'text-neutral-400' : 'text-neutral-500'
+            )}>{description}</p>
           )}
           {children}
         </div>
@@ -136,11 +162,15 @@ export const CardFooter = forwardRef<
   HTMLDivElement,
   HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   return (
     <div
       ref={ref}
       className={cn(
-        'mt-6 flex items-center justify-end gap-3 border-t border-neutral-800/50 pt-4',
+        'mt-6 flex items-center justify-end gap-3 border-t pt-4',
+        isDark ? 'border-neutral-800/50' : 'border-neutral-200',
         className
       )}
       {...props}

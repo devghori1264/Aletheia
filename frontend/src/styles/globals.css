@@ -78,44 +78,75 @@
     scroll-behavior: smooth;
   }
 
+  /* Light mode is the default */
   body {
-    @apply bg-neutral-950 text-neutral-100;
+    @apply bg-neutral-50 text-neutral-900;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
       Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 
+  /* Dark mode - Deep Oceanic theme */
+  .dark body {
+    @apply bg-neutral-900 text-neutral-50;
+  }
+
   /* Focus styles */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-neutral-950;
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  .dark :focus-visible {
+    @apply ring-offset-neutral-900;
   }
 
   /* Selection */
   ::selection {
-    @apply bg-primary-500/30 text-white;
+    @apply bg-primary-500/30 text-neutral-900;
   }
 
-  /* Scrollbar */
+  .dark ::selection {
+    @apply text-white;
+  }
+
+  /* Scrollbar - Light mode */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-neutral-900;
+    @apply bg-neutral-100;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-neutral-700 rounded-full;
+    @apply bg-neutral-300 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-neutral-600;
+    @apply bg-neutral-400;
+  }
+
+  /* Scrollbar - Dark mode */
+  .dark ::-webkit-scrollbar-track {
+    @apply bg-neutral-800;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-600 rounded-full;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-500;
   }
 
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(64 64 64) rgb(23 23 23);
+    scrollbar-color: rgb(203 213 225) rgb(241 245 249);
+  }
+
+  .dark * {
+    scrollbar-color: rgb(71 85 105) rgb(30 41 59);
   }
 }
 
@@ -126,12 +157,16 @@
 @layer components {
   /* Glass morphism card */
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-xl;
+    @apply relative overflow-hidden rounded-2xl border backdrop-blur-xl
+           bg-white/80 border-neutral-200 shadow-lg
+           dark:bg-white/[0.02] dark:border-white/5;
   }
 
   .glass-card::before {
     content: '';
-    @apply absolute inset-0 bg-gradient-to-br from-white/[0.08] to-transparent pointer-events-none;
+    @apply absolute inset-0 bg-gradient-to-br pointer-events-none
+           from-white/50 to-transparent
+           dark:from-white/[0.08] dark:to-transparent;
   }
 
   /* Glow effect */
@@ -161,39 +196,61 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 
            font-medium text-white transition-all duration-200 
            hover:bg-primary-500 hover:shadow-glow-sm
-           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-950
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 disabled:hover:shadow-none;
   }
 
+  .dark .btn-primary {
+    @apply ring-offset-neutral-900;
+  }
+
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-800 px-4 py-2.5 
-           font-medium text-neutral-100 border border-neutral-700 transition-all duration-200 
-           hover:bg-neutral-700 hover:border-neutral-600
-           focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-950
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 
+           font-medium transition-all duration-200 
+           bg-neutral-100 text-neutral-700 border border-neutral-200
+           hover:bg-neutral-200 hover:border-neutral-300
+           dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700
+           dark:hover:bg-neutral-700 dark:hover:border-neutral-600
+           focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dark .btn-secondary {
+    @apply ring-offset-neutral-900;
   }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 
-           font-medium text-neutral-300 transition-all duration-200 
-           hover:bg-neutral-800 hover:text-neutral-100
-           focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-950
+           font-medium transition-all duration-200 
+           text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900
+           dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white
+           focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dark .btn-ghost {
+    @apply ring-offset-neutral-900;
   }
 
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-danger-600 px-4 py-2.5 
            font-medium text-white transition-all duration-200 
            hover:bg-danger-500 hover:shadow-glow-danger
-           focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2 focus:ring-offset-neutral-950
+           focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dark .btn-danger {
+    @apply ring-offset-neutral-900;
   }
 
   /* Input styles */
   .input-base {
-    @apply w-full rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 
-           text-neutral-100 placeholder-neutral-500 transition-all duration-200
-           hover:border-neutral-600
+    @apply w-full rounded-xl px-4 py-3 transition-all duration-200
+           border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-400
+           hover:border-neutral-400
+           dark:border-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-100 dark:placeholder-neutral-500
+           dark:hover:border-neutral-500
            focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
@@ -204,24 +261,28 @@
   }
 
   .badge-success {
-    @apply badge bg-success-500/10 text-success-400 border border-success-500/20;
+    @apply badge bg-success-100 text-success-700 border border-success-200
+           dark:bg-success-500/10 dark:text-success-400 dark:border-success-500/20;
   }
 
   .badge-danger {
-    @apply badge bg-danger-500/10 text-danger-400 border border-danger-500/20;
+    @apply badge bg-danger-100 text-danger-700 border border-danger-200
+           dark:bg-danger-500/10 dark:text-danger-400 dark:border-danger-500/20;
   }
 
   .badge-warning {
-    @apply badge bg-warning-500/10 text-warning-400 border border-warning-500/20;
+    @apply badge bg-warning-100 text-warning-700 border border-warning-200
+           dark:bg-warning-500/10 dark:text-warning-400 dark:border-warning-500/20;
   }
 
   .badge-neutral {
-    @apply badge bg-neutral-700/50 text-neutral-300 border border-neutral-600/50;
+    @apply badge bg-neutral-100 text-neutral-600 border border-neutral-200
+           dark:bg-neutral-700/50 dark:text-neutral-300 dark:border-neutral-600/50;
   }
 
   /* Progress bar */
   .progress-bar {
-    @apply h-2 w-full overflow-hidden rounded-full bg-neutral-800;
+    @apply h-2 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700;
   }
 
   .progress-bar-fill {
@@ -246,7 +307,7 @@
   }
 
   .status-dot-neutral {
-    @apply status-dot bg-neutral-500;
+    @apply status-dot bg-neutral-400 dark:bg-neutral-500;
   }
 
   /* Card hover effect */
@@ -265,10 +326,19 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.04),
+      rgba(0, 0, 0, 0.04),
       transparent
     );
     animation: shimmer 2s infinite;
+  }
+
+  .dark .shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.04),
+      transparent
+    );
   }
 }
 

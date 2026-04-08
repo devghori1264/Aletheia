@@ -39,14 +39,14 @@ export const analysisService = {
    * Get analysis list with pagination.
    */
   async getList(params?: PaginationParams): Promise<AnalysisListResponse> {
-    return apiClient.get<AnalysisListResponse>('/analysis/analysis/', { params });
+    return apiClient.get<AnalysisListResponse>('/analysis/', { params });
   },
 
   /**
    * Get analysis by ID.
    */
   async getById(id: string): Promise<Analysis> {
-    return apiClient.get<Analysis>(`/analysis/analysis/${id}/`);
+    return apiClient.get<Analysis>(`/analysis/${id}/`);
   },
 
   /**
@@ -57,8 +57,16 @@ export const analysisService = {
     options?: AnalysisOptions,
     onProgress?: (progress: number) => void
   ): Promise<Analysis> {
-    return apiClient.upload<Analysis>('/analysis/analysis/submit/', file, onProgress, {
-      options: options ? JSON.stringify(options) : '',
+    const config = options ? {
+      use_ensemble: options.useEnsemble ?? true,
+      generate_heatmaps: options.generateHeatmaps ?? true,
+      sequence_length: options.frameInterval ?? 60,
+      model_name: 'ensemble',
+      webhook_url: options.webhookUrl ?? '',
+    } : undefined;
+    
+    return apiClient.upload<Analysis>('/analysis/submit/', file, onProgress, {
+      config: config ? JSON.stringify(config) : '',
     });
   },
 

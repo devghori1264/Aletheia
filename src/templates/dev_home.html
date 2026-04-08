@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aletheia API Server</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: #e5e5e5;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .logo {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        .status-badge {
+            display: inline-block;
+            background: #22c55e;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        .links {
+            display: grid;
+            gap: 10px;
+        }
+        .link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+            text-decoration: none;
+            color: #a5b4fc;
+            transition: all 0.2s;
+        }
+        .link:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateX(4px);
+        }
+        .link-icon { margin-right: 12px; font-size: 1.2rem; }
+        .link-text { flex: 1; }
+        .link-url { color: #666; font-size: 0.85rem; }
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 10px;
+        }
+        .info-box p { margin-bottom: 8px; }
+        .info-box p:last-child { margin-bottom: 0; }
+        code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+        .divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Aletheia</div>
+            <div class="subtitle">Enterprise Deepfake Detection Platform</div>
+            <div class="status-badge">✓ API Server Running</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🖥️ Access Points</div>
+            <div class="links">
+                <a href="http://localhost:3000" class="link">
+                    <span class="link-icon">🎨</span>
+                    <span class="link-text">
+                        <strong>Frontend Application</strong>
+                        <div class="link-url">http://localhost:3000</div>
+                    </span>
+                </a>
+                <a href="/admin/" class="link">
+                    <span class="link-icon">⚙️</span>
+                    <span class="link-text">
+                        <strong>Django Admin</strong>
+                        <div class="link-url">/admin/</div>
+                    </span>
+                </a>
+                <a href="/api/docs/" class="link">
+                    <span class="link-icon">📚</span>
+                    <span class="link-text">
+                        <strong>API Documentation (Swagger)</strong>
+                        <div class="link-url">/api/docs/</div>
+                    </span>
+                </a>
+                <a href="/api/redoc/" class="link">
+                    <span class="link-icon">📖</span>
+                    <span class="link-text">
+                        <strong>API Documentation (ReDoc)</strong>
+                        <div class="link-url">/api/redoc/</div>
+                    </span>
+                </a>
+                <a href="/api/" class="link">
+                    <span class="link-icon">🔌</span>
+                    <span class="link-text">
+                        <strong>API Root</strong>
+                        <div class="link-url">/api/</div>
+                    </span>
+                </a>
+                <a href="/health/" class="link">
+                    <span class="link-icon">💚</span>
+                    <span class="link-text">
+                        <strong>Health Check</strong>
+                        <div class="link-url">/health/</div>
+                    </span>
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🚀 Quick Start</div>
+            <div class="info-box">
+                <p><strong>To analyze videos:</strong></p>
+                <p>1. Open <a href="http://localhost:3000" style="color:#a5b4fc">http://localhost:3000</a> in your browser</p>
+                <p>2. Upload a video file</p>
+                <p>3. Click "Analyze" to detect deepfakes</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📋 API Endpoints</div>
+            <div class="links">
+                <div class="link" style="cursor:default">
+                    <span class="link-icon">POST</span>
+                    <span class="link-text">
+                        <strong>/api/v1/analysis/submit/</strong>
+                        <div class="link-url">Submit video for analysis</div>
+                    </span>
+                </div>
+                <div class="link" style="cursor:default">
+                    <span class="link-icon">GET</span>
+                    <span class="link-text">
+                        <strong>/api/v1/analysis/{id}/</strong>
+                        <div class="link-url">Get analysis result</div>
+                    </span>
+                </div>
+                <div class="link" style="cursor:default">
+                    <span class="link-icon">GET</span>
+                    <span class="link-text">
+                        <strong>/api/v1/analysis/</strong>
+                        <div class="link-url">List all analyses</div>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -2,6 +2,7 @@
  * Upload Zone Component
  *
  * Drag-and-drop file upload with preview and validation.
+ * Supports dark/light theme modes with seamless transitions.
  */
 
 import { useState, useCallback } from 'react';
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn, formatBytes, validateFile, isVideoFile, isImageFile } from '@/utils';
 import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/store';
 
 // =============================================================================
 // Types
@@ -60,6 +62,8 @@ export function UploadZone({
 }: UploadZoneProps) {
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   // Handle file drop
   const onDrop = useCallback(
@@ -140,8 +144,12 @@ export function UploadZone({
           'cursor-pointer outline-none',
           isDragActive && !isDragReject && 'border-primary-500 bg-primary-500/5',
           isDragReject && 'border-danger-500 bg-danger-500/5',
-          !isDragActive && !disabled && 'border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800/30',
-          disabled && 'cursor-not-allowed opacity-50 border-neutral-800',
+          !isDragActive && !disabled && (isDark 
+            ? 'border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800/30'
+            : 'border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50'),
+          disabled && (isDark 
+            ? 'cursor-not-allowed opacity-50 border-neutral-800'
+            : 'cursor-not-allowed opacity-50 border-neutral-300'),
           files.length === 0 && 'min-h-[300px]'
         )}
       >
@@ -160,7 +168,9 @@ export function UploadZone({
                 'flex h-16 w-16 items-center justify-center rounded-2xl transition-colors',
                 isDragActive
                   ? 'bg-primary-500/20 text-primary-400'
-                  : 'bg-neutral-800 text-neutral-400'
+                  : isDark 
+                    ? 'bg-neutral-800 text-neutral-400'
+                    : 'bg-neutral-100 text-neutral-500'
               )}
             >
               <Upload className="h-8 w-8" />
@@ -168,28 +178,47 @@ export function UploadZone({
 
             {/* Text */}
             <div className="mt-6">
-              <p className="text-lg font-medium text-white">
+              <p className={cn(
+                'text-lg font-medium',
+                isDark ? 'text-white' : 'text-neutral-900'
+              )}>
                 {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
               </p>
-              <p className="mt-2 text-sm text-neutral-400">
+              <p className={cn(
+                'mt-2 text-sm',
+                isDark ? 'text-neutral-400' : 'text-neutral-500'
+              )}>
                 or click to browse from your computer
               </p>
             </div>
 
             {/* Supported formats */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <div className="flex items-center gap-1.5 rounded-full bg-neutral-800/50 px-3 py-1.5 text-xs text-neutral-400">
+              <div className={cn(
+                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs',
+                isDark 
+                  ? 'bg-neutral-800/50 text-neutral-400'
+                  : 'bg-neutral-100 text-neutral-500'
+              )}>
                 <Film className="h-3.5 w-3.5" />
                 MP4, WebM, MOV
               </div>
-              <div className="flex items-center gap-1.5 rounded-full bg-neutral-800/50 px-3 py-1.5 text-xs text-neutral-400">
+              <div className={cn(
+                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs',
+                isDark 
+                  ? 'bg-neutral-800/50 text-neutral-400'
+                  : 'bg-neutral-100 text-neutral-500'
+              )}>
                 <Image className="h-3.5 w-3.5" />
                 JPG, PNG
               </div>
             </div>
 
             {/* Size limit */}
-            <p className="mt-4 text-xs text-neutral-500">
+            <p className={cn(
+              'mt-4 text-xs',
+              isDark ? 'text-neutral-500' : 'text-neutral-400'
+            )}>
               Max file size: {formatBytes(maxSize)}
             </p>
           </div>
@@ -207,7 +236,10 @@ export function UploadZone({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     layout
-                    className="group relative overflow-hidden rounded-xl bg-neutral-800"
+                    className={cn(
+                      'group relative overflow-hidden rounded-xl',
+                      isDark ? 'bg-neutral-800' : 'bg-neutral-100'
+                    )}
                   >
                     {/* Preview */}
                     <div className="aspect-video">
@@ -263,7 +295,12 @@ export function UploadZone({
 
               {/* Add more button */}
               {files.length < maxFiles && (
-                <div className="flex aspect-video items-center justify-center rounded-xl border-2 border-dashed border-neutral-700 text-neutral-500 transition-colors hover:border-neutral-600 hover:text-neutral-400">
+                <div className={cn(
+                  'flex aspect-video items-center justify-center rounded-xl border-2 border-dashed transition-colors',
+                  isDark 
+                    ? 'border-neutral-700 text-neutral-500 hover:border-neutral-600 hover:text-neutral-400'
+                    : 'border-neutral-300 text-neutral-400 hover:border-neutral-400 hover:text-neutral-500'
+                )}>
                   <div className="text-center">
                     <Upload className="mx-auto h-6 w-6" />
                     <p className="mt-2 text-sm">Add more</p>
@@ -310,18 +347,21 @@ export function UploadZone({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex flex-col items-center justify-between gap-4 sm:flex-row"
         >
-          <div className="flex items-center gap-2 text-sm text-neutral-400">
+          <div className={cn(
+            'flex items-center gap-2 text-sm',
+            isDark ? 'text-neutral-400' : 'text-neutral-500'
+          )}>
             <CheckCircle2 className="h-4 w-4 text-success-400" />
             {files.length} file{files.length > 1 ? 's' : ''} selected
           </div>
 
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={clearFiles}>
+          <div className="flex w-full gap-3 sm:w-auto">
+            <Button variant="ghost" onClick={clearFiles} className="flex-1 sm:flex-initial">
               Clear all
             </Button>
-            <Button variant="primary" onClick={handleAnalyze}>
+            <Button variant="primary" onClick={handleAnalyze} className="flex-1 sm:flex-initial">
               Analyze {files.length > 1 ? 'files' : 'file'}
             </Button>
           </div>

@@ -147,6 +147,7 @@ export interface MediaFile {
   width: number | null;
   height: number | null;
   frameRate: number | null;
+  fileUrl: string | null;
   thumbnailUrl: string | null;
   createdAt: string;
 }
