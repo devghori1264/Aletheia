@@ -58,7 +58,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     # Django Framework
-    "Django>=4.2,<5.0",
+    "Django>=4.2,<6.0",
     "djangorestframework>=3.14.0",
     "django-cors-headers>=4.3.0",
     "django-filter>=23.5",
