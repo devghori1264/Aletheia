@@ -54,7 +54,8 @@ if custom_domain := os.getenv("CUSTOM_DOMAIN"):
 
 SECURE_PROXY_SSL_HEADER: Final[tuple[str, str]] = ("HTTP_X_FORWARDED_PROTO", "https")
 
-SECURE_SSL_REDIRECT: Final[bool] = True
+SECURE_SSL_REDIRECT: Final[bool] = False
+SECURE_REDIRECT_EXEMPT: list[str] = [r"^health/$"]
 
 SECURE_HSTS_SECONDS: Final[int] = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS: Final[bool] = True
@@ -75,10 +76,9 @@ X_FRAME_OPTIONS: Final[str] = "DENY"
 DATABASES: dict[str, dict[str, Any]] = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": Path("/tmp/aletheia.db"),
+        "NAME": "/tmp/aletheia.db",
         "OPTIONS": {
             "timeout": 20,
-            "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
         },
     }
 }
@@ -96,26 +96,34 @@ CACHES: dict[str, dict[str, Any]] = {
 CELERY_TASK_ALWAYS_EAGER: Final[bool] = True
 CELERY_TASK_EAGER_PROPAGATES: Final[bool] = True
 
-CELERY_BROKER_URL: str | None = None
-CELERY_RESULT_BACKEND: str | None = None
+CELERY_BROKER_URL: str | None = "memory://"
+CELERY_RESULT_BACKEND: str | None = "memory://"
 
 CELERY_TASK_TIME_LIMIT: Final[int] = 300
 CELERY_TASK_SOFT_TIME_LIMIT: Final[int] = 270
 
 STATIC_URL: Final[str] = "/static/"
-STATIC_ROOT: Path = Path("/app/staticfiles")
+STATIC_ROOT: str = str(Path("/app/staticfiles"))
 
-STATICFILES_DIRS: list[Path] = [
-    Path("/app/frontend/dist"),
-    Path("/app/src/static"),
+WHITENOISE_ROOT: str = str(Path("/app/frontend/dist"))
+
+STATICFILES_DIRS: list[str] = [
+    str(Path("/app/frontend/dist")),
+    str(Path("/app/src/static")),
 ]
 
 STATICFILES_STORAGE: Final[str] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL: Final[str] = "/media/"
-MEDIA_ROOT: Path = Path("/tmp/media")
+MEDIA_ROOT: str = str(Path("/tmp/media"))
 
-MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+UPLOAD_TEMP_DIR: str = str(Path("/tmp/uploads"))
+PROCESSING_TEMP_DIR: str = str(Path("/tmp/processing"))
+
+IS_COLLECTSTATIC_COMMAND: Final[bool] = "collectstatic" in sys.argv
+if not IS_COLLECTSTATIC_COMMAND:
+    for _dir in (MEDIA_ROOT, UPLOAD_TEMP_DIR, PROCESSING_TEMP_DIR):
+        Path(_dir).mkdir(parents=True, exist_ok=True)
 
 CORS_ALLOW_ALL_ORIGINS: Final[bool] = False
 CORS_ALLOWED_ORIGINS: list[str] = [
@@ -149,7 +157,7 @@ ML_DEFAULT_MODEL: Final[str] = "efficientnet_lstm"
 
 ML_DEFAULT_SEQUENCE_LENGTH: Final[int] = 30
 ML_LAZY_LOAD: Final[bool] = True
-ML_MODELS_DIR: Path = Path(os.getenv("ML_MODELS_DIR", "/app/models"))
+ML_MODELS_DIR: str = os.getenv("ML_MODELS_DIR", "/app/models")
 
 LOGGING: dict[str, Any] = {
     "version": 1,
@@ -225,7 +233,7 @@ if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
-    
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[
@@ -247,8 +255,8 @@ if SENTRY_DSN:
     )
 
 TEMPLATES[0]["DIRS"] = [
-    Path("/app/frontend/dist"),
-    Path("/app/src/templates"),
+    str(Path("/app/frontend/dist")),
+    str(Path("/app/src/templates")),
 ]
 
 from datetime import timedelta
@@ -267,8 +275,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE: Final[int] = 50 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE: Final[int] = 50 * 1024 * 1024
 MAX_VIDEO_UPLOAD_SIZE: Final[int] = 100 * 1024 * 1024
 
-FILE_UPLOAD_TEMP_DIR: Path = Path("/tmp/uploads")
-FILE_UPLOAD_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+FILE_UPLOAD_TEMP_DIR: str = str(Path("/tmp/uploads"))
+if not IS_COLLECTSTATIC_COMMAND:
+    Path(FILE_UPLOAD_TEMP_DIR).mkdir(parents=True, exist_ok=True)
 
 CONN_MAX_AGE: Final[int] = 0
 
@@ -283,6 +292,15 @@ SILENCED_SYSTEM_CHECKS: list[str] = [
 ]
 
 if not any(arg in sys.argv for arg in ["collectstatic", "migrate", "check"]):
+    print(
+        "\n"
+        "╔══════════════════════════════════════════════════════════════════════╗\n"
+        "║  🛡️  ALETHEIA - Fly.io Mode                                           ║\n"
+        "║  Debug: OFF | Database: SQLite (Ephemeral) | Celery: Eager           ║\n"
+        "║  Security: HTTPS (via Proxy) + Secure Cookies                        ║\n"
+        "╚══════════════════════════════════════════════════════════════════════╝\n"
+    )
+
     import logging
     logger = logging.getLogger("aletheia.settings")
     logger.info(

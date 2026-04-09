@@ -374,7 +374,7 @@ Business logic encapsulated in service classes, decoupled from Django views:
 ```python
 class AnalysisService:
     """Orchestrates the complete analysis workflow."""
-    
+
     def __init__(
         self,
         media_service: MediaService,
@@ -384,7 +384,7 @@ class AnalysisService:
         self.media = media_service
         self.ml_engine = ml_engine
         self.reports = report_service
-    
+
     @transaction.atomic
     def create_analysis(
         self,
@@ -395,7 +395,7 @@ class AnalysisService:
         """Create new analysis with transactional safety."""
         # 1. Validate and store media
         media = self.media.store_video(video_file, user)
-        
+
         # 2. Create analysis record
         analysis = Analysis.objects.create(
             user=user,
@@ -403,14 +403,14 @@ class AnalysisService:
             status=AnalysisStatus.PENDING,
             config=config.dict(),
         )
-        
+
         # 3. Enqueue async processing
         tasks.process_video.apply_async(
             args=[analysis.id],
             queue='analysis',
             priority=config.priority,
         )
-        
+
         return analysis
 ```
 
@@ -427,10 +427,10 @@ Abstracts database operations behind interface:
 ```python
 class AnalysisRepository:
     """Data access layer for Analysis model."""
-    
+
     def find_by_id(self, analysis_id: UUID) -> Analysis | None:
         return Analysis.objects.filter(id=analysis_id).first()
-    
+
     def find_by_user(
         self,
         user: User,
@@ -441,7 +441,7 @@ class AnalysisRepository:
         if status:
             qs = qs.filter(status=status)
         return qs.order_by('-created_at')[:limit]
-    
+
     def update_result(
         self,
         analysis_id: UUID,
@@ -470,11 +470,11 @@ def process_video(self, analysis_id: str) -> dict:
     """Process video analysis asynchronously."""
     try:
         analysis = Analysis.objects.get(id=analysis_id)
-        
+
         # Update to processing status
         analysis.status = AnalysisStatus.PROCESSING
         analysis.save(update_fields=['status', 'updated_at'])
-        
+
         # Execute ML pipeline
         result = ml_engine.analyze_video(
             video_path=analysis.media.file.path,
@@ -484,19 +484,19 @@ def process_video(self, analysis_id: str) -> dict:
                 meta={'current': p.current, 'total': p.total},
             ),
         )
-        
+
         # Store results
         analysis.result = result.dict()
         analysis.status = AnalysisStatus.COMPLETED
         analysis.completed_at = timezone.now()
         analysis.save()
-        
+
         # Trigger report generation if requested
         if analysis.config.get('generate_report'):
             generate_report.apply_async(args=[analysis.id])
-        
+
         return {'status': 'success', 'analysis_id': str(analysis.id)}
-        
+
     except SoftTimeLimitExceeded:
         logger.error(f"Task timeout for analysis {analysis_id}")
         raise
@@ -512,29 +512,29 @@ Pydantic models enforce runtime type validation:
 ```python
 class AnalysisConfigSchema(BaseModel):
     """Analysis configuration schema."""
-    
+
     sequence_length: int = Field(
         default=60,
         ge=30,
         le=300,
         description="Number of frames to analyze",
     )
-    
+
     model_name: Literal['ensemble', 'efficientnet', 'resnext', 'xception'] = Field(
         default='ensemble',
         description="Model to use for inference",
     )
-    
+
     enable_explainability: bool = Field(
         default=True,
         description="Generate GradCAM visualizations",
     )
-    
+
     frame_sampling: Literal['uniform', 'keyframes', 'random'] = Field(
         default='uniform',
         description="Frame sampling strategy",
     )
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -551,7 +551,7 @@ Converted to DRF serializer for API integration:
 ```python
 class AnalysisConfigSerializer(serializers.Serializer):
     """DRF serializer wrapping Pydantic schema."""
-    
+
     def to_internal_value(self, data):
         try:
             return AnalysisConfigSchema(**data).dict()
@@ -581,7 +581,7 @@ If any step fails → 401 Unauthorized
 ```python
 class MediaValidator:
     """Multi-layer media file validation."""
-    
+
     ALLOWED_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv'}
     ALLOWED_MIME_TYPES = {
         'video/mp4',
@@ -591,47 +591,47 @@ class MediaValidator:
     }
     MAX_FILE_SIZE = 500 * 1024 * 1024  # 500 MB
     MAX_DURATION = 600  # 10 minutes
-    
+
     @staticmethod
     def validate(uploaded_file: UploadedFile) -> None:
         """Comprehensive validation with multiple checks."""
-        
+
         # 1. Extension check (basic, easily spoofed)
         ext = Path(uploaded_file.name).suffix.lower()
         if ext not in MediaValidator.ALLOWED_EXTENSIONS:
             raise ValidationError(f"Unsupported file extension: {ext}")
-        
+
         # 2. Size check
         if uploaded_file.size > MediaValidator.MAX_FILE_SIZE:
             raise ValidationError(
                 f"File too large: {uploaded_file.size} bytes "
                 f"(max: {MediaValidator.MAX_FILE_SIZE})"
             )
-        
+
         # 3. MIME type check (python-magic, reads file headers)
         mime_type = magic.from_buffer(uploaded_file.read(2048), mime=True)
         uploaded_file.seek(0)  # Reset file pointer
-        
+
         if mime_type not in MediaValidator.ALLOWED_MIME_TYPES:
             raise ValidationError(f"Invalid MIME type: {mime_type}")
-        
+
         # 4. Video metadata validation (OpenCV probe)
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
             for chunk in uploaded_file.chunks():
                 tmp.write(chunk)
             tmp.flush()
-            
+
             cap = cv2.VideoCapture(tmp.name)
             if not cap.isOpened():
                 raise ValidationError("Failed to open video file")
-            
+
             fps = cap.get(cv2.CAP_PROP_FPS)
             frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
             duration = frame_count / fps if fps > 0 else 0
-            
+
             cap.release()
             Path(tmp.name).unlink()
-            
+
             if duration > MediaValidator.MAX_DURATION:
                 raise ValidationError(
                     f"Video too long: {duration:.1f}s "
@@ -662,15 +662,15 @@ REST_FRAMEWORK = {
 # core/throttling.py
 class AnalysisThrottle(UserRateThrottle):
     """Custom throttle for analysis endpoints."""
-    
+
     scope = 'analysis'
-    
+
     def get_cache_key(self, request, view):
         if request.user.is_authenticated:
             ident = request.user.pk
         else:
             ident = self.get_ident(request)
-        
+
         return self.cache_format % {
             'scope': self.scope,
             'ident': ident,
@@ -936,7 +936,7 @@ curl -X POST http://localhost:8000/api/v1/analysis/submit/ \
    ```bash
    # Check CUDA availability
    python -c "import torch; print(torch.cuda.is_available())"
-   
+
    # Install correct PyTorch version
    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
    ```
@@ -945,7 +945,7 @@ curl -X POST http://localhost:8000/api/v1/analysis/submit/ \
    ```bash
    # Verify PostgreSQL is running
    docker ps | grep postgres
-   
+
    # Test connection
    psql -h localhost -U aletheia -d aletheia
    ```
@@ -954,7 +954,7 @@ curl -X POST http://localhost:8000/api/v1/analysis/submit/ \
    ```bash
    # Verify Redis is running
    docker ps | grep redis
-   
+
    # Test connection
    redis-cli ping  # Should return PONG
    ```
@@ -963,7 +963,7 @@ curl -X POST http://localhost:8000/api/v1/analysis/submit/ \
    ```bash
    # Ensure all dependencies installed
    pip install -e ".[dev,ml]"
-   
+
    # Check Python path
    echo $PYTHONPATH
    export PYTHONPATH=/path/to/aletheia/src:$PYTHONPATH
@@ -973,7 +973,7 @@ curl -X POST http://localhost:8000/api/v1/analysis/submit/ \
    ```bash
    # Reduce batch size in config
    export ML_BATCH_SIZE=4
-   
+
    # Use CPU mode
    export ML_DEVICE=cpu
    ```
@@ -1560,8 +1560,8 @@ grad_avg = grad_total / N
 θ = θ - η × grad_avg
 ```
 
-Batch size per GPU: 8 videos (60 frames each)  
-Effective batch size: $8 \times N_{\text{gpus}}$  
+Batch size per GPU: 8 videos (60 frames each)
+Effective batch size: $8 \times N_{\text{gpus}}$
 Gradient accumulation steps: 4
 
 **Memory optimization**:
@@ -2194,7 +2194,7 @@ model_inference_duration_seconds = Histogram(
    aws s3 sync ./models/ s3://aletheia-models/ --storage-class STANDARD_IA
    ```
 
-**Recovery Time Objective (RTO)**: 1 hour  
+**Recovery Time Objective (RTO)**: 1 hour
 **Recovery Point Objective (RPO)**: 5 minutes
 
 ---
@@ -2537,7 +2537,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ## Contact & Support
 
-**Bug Reports**: https://github.com/devghori1264/aletheia/issues  
+**Bug Reports**: https://github.com/devghori1264/aletheia/issues
 
 
 **Community**:

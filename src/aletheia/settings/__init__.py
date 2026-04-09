@@ -26,7 +26,7 @@ from typing import Final
 ENVIRONMENT: Final[str] = os.getenv("ALETHEIA_ENVIRONMENT", "development").lower()
 
 # Validate environment
-VALID_ENVIRONMENTS: Final[tuple[str, ...]] = ("development", "production", "testing")
+VALID_ENVIRONMENTS: Final[tuple[str, ...]] = ("development", "production", "testing", "flyio")
 
 if ENVIRONMENT not in VALID_ENVIRONMENTS:
     raise ValueError(
@@ -37,6 +37,8 @@ if ENVIRONMENT not in VALID_ENVIRONMENTS:
 # Dynamic settings import based on environment
 if ENVIRONMENT == "production":
     from .production import *  # noqa: F401, F403
+elif ENVIRONMENT == "flyio":
+    from .flyio import *  # noqa: F401, F403
 elif ENVIRONMENT == "testing":
     from .testing import *  # noqa: F401, F403
 else:

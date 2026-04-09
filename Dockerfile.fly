@@ -11,7 +11,7 @@ WORKDIR /app/frontend
 
 COPY frontend/package.json frontend/package-lock.json ./
 
-RUN npm ci --ignore-scripts --no-audit --no-fund && \
+RUN npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund && \
     npm cache clean --force
 
 COPY frontend/ ./
@@ -54,11 +54,9 @@ RUN pip install --upgrade pip setuptools wheel
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
 
-RUN pip install -e ".[production]" --no-compile && \
+RUN pip install python-json-logger -e ".[production]" --no-compile && \
     rm -rf /root/.cache/pip && \
     find /opt/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
-    find /opt/venv -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
-    find /opt/venv -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
     find /opt/venv -type f -name "*.pyc" -delete 2>/dev/null || true && \
     find /opt/venv -type f -name "*.pyo" -delete 2>/dev/null || true
 
@@ -110,6 +108,9 @@ COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 COPY --chown=aletheia:aletheia src/ /app/src/
 COPY --chown=aletheia:aletheia pyproject.toml /app/
+COPY --chown=aletheia:aletheia scripts/docker-entrypoint.sh /app/scripts/
+
+RUN chmod +x /app/scripts/docker-entrypoint.sh
 
 RUN mkdir -p \
     /app/staticfiles \
@@ -127,6 +128,10 @@ RUN DJANGO_SECRET_KEY=build-secret \
     DJANGO_SETTINGS_MODULE=aletheia.settings.flyio \
     python /app/src/manage.py collectstatic --noinput --clear
 
+RUN rm -f /app/logs/*.log && \
+    touch /app/logs/.keep && \
+    chown -R aletheia:aletheia /app/logs
+
 USER aletheia
 
 EXPOSE 8000
@@ -134,7 +139,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl --fail --silent --show-error http://localhost:8000/health/ || exit 1
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/scripts/docker-entrypoint.sh"]
 
 CMD ["gunicorn", "aletheia.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
@@ -150,5 +156,4 @@ CMD ["gunicorn", "aletheia.wsgi:application", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--capture-output", \
-     "--enable-stdio-inheritance", \
-     "--preload"]
+     "--enable-stdio-inheritance"]

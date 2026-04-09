@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ["--allow-missing-credentials"]
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks-staged
+
+  - repo: local
+    hooks:
+      - id: forbid-sensitive-filenames
+        name: block-sensitive-file-patterns
+        language: system
+        pass_filenames: false
+        entry: |
+          bash -c 'set -euo pipefail; files="$(git diff --cached --name-only)"; if echo "$files" | rg -n "(^|/)\.env($|\.|/)|(^|/)\.envrc$|(^|/)\.secrets(\.|$)|(^|/)id_rsa$|(^|/)id_ed25519$|(^|/)credentials(\.|$)|(^|/)secrets(\.|$)" >/dev/null; then echo "Blocked commit: staged files include sensitive filenames (env/secrets/credentials/private keys)."; exit 1; fi'

@@ -12,7 +12,7 @@ def load_env_file():
     # Get project root (one level up from src/)
     project_root = Path(__file__).resolve().parent.parent
     env_file = project_root / ".env"
-    
+
     if env_file.exists():
         with open(env_file) as f:
             for line in f:
@@ -31,17 +31,9 @@ def main():
     """Run administrative tasks."""
     # Load .env file first
     load_env_file()
-    
-    # Determine which settings to use based on ALETHEIA_ENVIRONMENT
-    environment = os.environ.get("ALETHEIA_ENVIRONMENT", "development").lower()
-    
-    if environment == "production":
-        settings_module = "aletheia.settings.production"
-    else:
-        settings_module = "aletheia.settings.development"
-    
-    os.environ["DJANGO_SETTINGS_MODULE"] = settings_module
-    
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "aletheia.settings")
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -50,7 +42,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    
+
     execute_from_command_line(sys.argv)
 
 

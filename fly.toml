@@ -1,4 +1,4 @@
-app = "aletheia"
+app = "aletheia-detector"
 primary_region = "iad"
 
 [build]
@@ -8,8 +8,11 @@ primary_region = "iad"
     NODE_VERSION = "20"
     NEXT_TELEMETRY_DISABLED = "1"
 
+[processes]
+  app = ""
+
 [env]
-  ALETHEIA_ENVIRONMENT = "production"
+  ALETHEIA_ENVIRONMENT = "flyio"
   PYTHONUNBUFFERED = "1"
   PYTHONDONTWRITEBYTECODE = "1"
   PYTHONPATH = "/app/src"
@@ -48,22 +51,19 @@ primary_region = "iad"
     soft_limit = 8
     hard_limit = 12
 
-  [http_service.machine_checks]
-    grace_period = "30s"
-
   [http_service.http_options]
-    response_header_timeout = "300s"
-    idle_timeout = "300s"
+    response_header_timeout = 300
+    idle_timeout = 300
 
 [[http_service.checks]]
-  grace_period = "30s"
+  grace_period = "60s"
   interval = "30s"
   timeout = "10s"
   method = "GET"
   path = "/health/"
 
   [http_service.checks.headers]
-    User-Agent = "Fly-Health-Check"
+    Host = "aletheia-detector.fly.dev"
 
 [[vm]]
   size = "performance-2x"
@@ -71,27 +71,7 @@ primary_region = "iad"
   cpu_kind = "performance"
   cpus = 2
 
-[processes]
-  app = """
-    gunicorn aletheia.wsgi:application \
-      --bind 0.0.0.0:8000 \
-      --workers ${WEB_CONCURRENCY:-2} \
-      --threads ${GUNICORN_THREADS:-4} \
-      --worker-class gthread \
-      --worker-tmp-dir /dev/shm \
-      --timeout ${GUNICORN_TIMEOUT:-300} \
-      --keep-alive ${GUNICORN_KEEPALIVE:-5} \
-      --max-requests 100 \
-      --max-requests-jitter 20 \
-      --graceful-timeout 30 \
-      --access-logfile - \
-      --error-logfile - \
-      --capture-output \
-      --enable-stdio-inheritance \
-      --preload
-  """
-
-[statics]
+[[statics]]
   guest_path = "/app/staticfiles"
   url_prefix = "/static/"
 
@@ -101,11 +81,8 @@ primary_region = "iad"
 
 [deploy]
   strategy = "rolling"
-  release_command = "python src/manage.py collectstatic --noinput"
-
 [experimental]
   auto_rollback = true
 
-[kill_signal]
-  signal = "SIGTERM"
-  timeout = "30s"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"

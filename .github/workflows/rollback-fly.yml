@@ -1,0 +1,96 @@
+name: Ops - Rollback Fly.io Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: "Fly app name"
+        required: true
+        default: "aletheia-detector"
+        type: string
+      target_version:
+        description: "Fly release version to roll back to (e.g., v123)"
+        required: true
+        type: string
+      reason:
+        description: "Rollback reason (change incident, regression, outage, etc.)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rollback-fly-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Execute Production Rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://aletheia-detector.fly.dev
+    steps:
+      - name: Validate required production secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${{ secrets.FLY_API_TOKEN }}" ]]; then
+            echo "FLY_API_TOKEN is missing."
+            exit 1
+          fi
+
+      - name: Validate target version format
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${{ github.event.inputs.target_version }}" =~ ^v[0-9]+$ ]]; then
+            echo "target_version must match pattern v<digits>, e.g. v123"
+            exit 1
+          fi
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Display current release history
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl releases --app "${{ github.event.inputs.app_name }}"
+
+      - name: Roll back to selected release
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl releases rollback "${{ github.event.inputs.target_version }}" --app "${{ github.event.inputs.app_name }}" --yes
+
+      - name: Verify health endpoint after rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEALTH_URL="https://${{ github.event.inputs.app_name }}.fly.dev/health/"
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(curl -L -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || true)"
+            if [[ "$code" == "200" ]]; then
+              echo "Rollback health verification passed on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed with status $code; retrying in 10s..."
+            sleep 10
+          done
+          echo "Rollback executed but health verification failed."
+          exit 1
+
+      - name: Write rollback summary
+        shell: bash
+        run: |
+          {
+            echo "## Fly Rollback Summary"
+            echo ""
+            echo "- App: \`${{ github.event.inputs.app_name }}\`"
+            echo "- Target release: \`${{ github.event.inputs.target_version }}\`"
+            echo "- Triggered by: \`${{ github.actor }}\`"
+            echo "- Reason: ${{ github.event.inputs.reason }}"
+          } >> "$GITHUB_STEP_SUMMARY"

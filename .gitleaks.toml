@@ -1,0 +1,17 @@
+title = "Aletheia Gitleaks Policy"
+
+[allowlist]
+description = "Allowlist for public examples and docs."
+paths = [
+  '''^README\.md$''',
+  '''^SECURITY\.md$''',
+  '''^docs/''',
+  '''^Documentation/''',
+  '''^frontend/.*\.map$''',
+  '''^frontend/public/mockServiceWorker\.js$''',
+  '''^.*\.example$''',
+  '''^.*\.sample$'''
+]
+
+[extend]
+useDefault = true

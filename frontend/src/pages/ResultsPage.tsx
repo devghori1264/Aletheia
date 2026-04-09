@@ -10,7 +10,7 @@
  * - Privacy assurance messaging
  */
 
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -23,7 +23,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ResultDisplay } from '@/components/analysis/ResultDisplay';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -42,10 +42,15 @@ function getVideoUrl(analysis: { mediaFile?: { id?: string; fileName?: string; f
   if (analysis?.mediaFile?.fileUrl) {
     return analysis.mediaFile.fileUrl;
   }
-  
+
   // Fallback: construct URL (shouldn't be needed with backend fix)
   if (!analysis?.mediaFile?.fileName) return null;
   return null;
+}
+
+interface ResultsRouteState {
+  localPreviewUrl?: string;
+  localFileName?: string;
 }
 
 // =============================================================================
@@ -99,7 +104,7 @@ function VideoPlayer({ src, fileName }: { src: string; fileName: string }) {
         onPause={() => setIsPlaying(false)}
         onError={() => setHasError(true)}
       />
-      
+
       {/* Video Controls Overlay */}
       <div className={cn(
         'absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100',
@@ -137,7 +142,19 @@ function VideoPlayer({ src, fileName }: { src: string; fileName: string }) {
 
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const routeState = (location.state as ResultsRouteState | null) ?? null;
+  const localPreviewUrl = routeState?.localPreviewUrl ?? null;
   const { data: analysis, isLoading, error, refetch } = useAnalysis(id);
+
+  // Cleanup local object URL when leaving the page.
+  useEffect(() => {
+    if (!localPreviewUrl || !localPreviewUrl.startsWith('blob:')) return;
+
+    return () => {
+      URL.revokeObjectURL(localPreviewUrl);
+    };
+  }, [localPreviewUrl]);
 
   // Loading state
   if (isLoading) {
@@ -285,7 +302,7 @@ export default function ResultsPage() {
   }
 
   // Get video URL for preview
-  const videoUrl = getVideoUrl(analysis);
+  const videoUrl = localPreviewUrl || getVideoUrl(analysis);
 
   // Completed state
   return (
@@ -330,17 +347,25 @@ export default function ResultsPage() {
           <Card variant="default">
             <div className="p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Source Media</h3>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{analysis.mediaFile.fileName}</p>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {routeState?.localFileName || analysis.mediaFile.fileName}
+              </p>
             </div>
 
             <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 relative">
               {videoUrl ? (
-                <VideoPlayer src={videoUrl} fileName={analysis.mediaFile.fileName} />
+                <VideoPlayer
+                  src={videoUrl}
+                  fileName={routeState?.localFileName || analysis.mediaFile.fileName}
+                />
               ) : (
                 <div className="flex h-full items-center justify-center text-neutral-400 dark:text-neutral-500">
                   <div className="text-center">
                     <AlertCircle className="mx-auto h-12 w-12 mb-2 opacity-50" />
                     <p>Media preview unavailable</p>
+                    <p className="mt-1 text-sm">
+                      Preview unavailable for older analyses.
+                    </p>
                   </div>
                 </div>
               )}
