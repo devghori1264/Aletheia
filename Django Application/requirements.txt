@@ -54,7 +54,7 @@ notebook==7.2.1
 numpy===1.26.4
 opencv-python==4.10.0.84
 packaging==24.1
-pandas==2.2.2
+pandas==2.3.3
 pandocfilters==1.5.1
 parso==0.8.4
 pathtools==0.1.2
