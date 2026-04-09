@@ -222,7 +222,7 @@ jobs:
           cache-from: type=gha
 
       - name: Run Trivy (fail on High/Critical)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "aletheia:scan"
           format: "sarif"
